@@ -1,0 +1,365 @@
+import React, { useState } from "react";
+import { Track } from "../../types";
+import { Turntable } from "../Turntable";
+import { WaveformVisualizer } from "../WaveformVisualizer";
+import { Sparkles, ListMusic, Heart, Music, Search, Plus, Play, Trash2 } from "lucide-react";
+
+interface NowSpinningScreenProps {
+  currentTrack: Track;
+  isPlaying: boolean;
+  togglePlay: () => void;
+  allTracks: Track[];
+  onPlayTrack: (track: Track) => void;
+  onNext: () => void;
+  onPrev: () => void;
+  queue: Track[];
+  removeFromQueue: (index: number) => void;
+  likedTracks: Track[];
+  onToggleLike: (track: Track) => void;
+  playlists: any[];
+  onAddToQueue: (track: Track) => void;
+}
+
+type Tab = "queue" | "liked" | "playlist" | "search";
+
+export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
+  currentTrack,
+  isPlaying,
+  togglePlay,
+  allTracks,
+  onPlayTrack,
+  onNext,
+  onPrev,
+  queue,
+  removeFromQueue,
+  likedTracks,
+  onToggleLike,
+  playlists,
+  onAddToQueue
+}) => {
+  const [activeTab, setActiveTab] = useState<Tab>("queue");
+  const [spinningSearchQuery, setSpinningSearchQuery] = useState("");
+  const [spinningSearchResults, setSpinningSearchResults] = useState<Track[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleLocalSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!spinningSearchQuery.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`https://jiosavnapi-production.up.railway.app/api/search/songs?query=${encodeURIComponent(spinningSearchQuery.trim())}`);
+      const resData = await response.json();
+      if (resData.success && resData.data && resData.data.results) {
+        const mapped = resData.data.results.map((song: any) => {
+          const downloadObj = song.downloadUrl.find((d: any) => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1];
+          const imageObj = song.image.find((i: any) => i.quality === "500x500") || song.image[song.image.length - 1];
+          const durationSec = song.duration || 0;
+          const mins = Math.floor(durationSec / 60);
+          const secs = durationSec % 60;
+          const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+          
+          return {
+            id: song.id,
+            title: song.name,
+            artist: song.artists.primary.map((a: any) => a.name).join(", ") || "Unknown Artist",
+            album: song.album.name || "Unknown Album",
+            duration: durationStr,
+            coverUrl: imageObj ? imageObj.url : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17",
+            genre: song.language ? song.language.toUpperCase() : "UNKNOWN",
+            listeners: song.playCount ? `${(song.playCount / 1000000).toFixed(1)}M` : "100K",
+            audioUrl: downloadObj ? downloadObj.url : ""
+          };
+        });
+        setSpinningSearchResults(mapped);
+      } else {
+        setSpinningSearchResults([]);
+      }
+    } catch (e) {
+      console.error("Local search error in now spinning", e);
+      setSpinningSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col gap-6 p-4 md:p-6 font-mono overflow-y-auto scrollbar-hide h-full">
+      {/* Top Header details */}
+      <div className="flex items-center justify-between border-b border-border-tan pb-3">
+        <div>
+          <span className="text-[10px] text-primary font-bold tracking-widest block">DECK_OUT_V_02</span>
+          <h2 className="text-sm md:text-lg font-bold text-text-charcoal flex items-center gap-2">
+            NOW SPINNING <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+          </h2>
+        </div>
+        <div className="text-right text-[9px] md:text-[10px] text-gray-500 font-bold">
+          <span className="hidden sm:inline">ACTIVE SOURCE: INTERNAL_OSC</span>
+          <span className="block text-primary">STATUS: {isPlaying ? "SPINNING" : "STOPPED"}</span>
+        </div>
+      </div>
+
+      {/* Main Content Splitting */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
+        {/* Left 7 Columns: Turntable & Wave visualizers */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <Turntable 
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            togglePlay={togglePlay}
+            onNext={onNext}
+            onPrev={onPrev}
+            isLiked={likedTracks.some((t) => t.id === currentTrack.id)}
+            onToggleLike={() => onToggleLike(currentTrack)}
+          />
+          
+          <WaveformVisualizer isPlaying={isPlaying} />
+        </div>
+
+        {/* Right 5 Columns: Interactive Multi-Tab Console */}
+        <div className="lg:col-span-5 bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-4 h-full lg:min-h-[480px]">
+          {/* Tab Navigation header */}
+          <div className="flex border-b-2 border-[#1A1A1A]">
+            {(["queue", "liked", "playlist", "search"] as Tab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 text-[10px] md:text-xs font-black uppercase tracking-wider py-2 border-r last:border-r-0 border-[#1A1A1A] transition-colors cursor-pointer ${
+                  activeTab === tab
+                    ? "bg-[#1A1A1A] text-white"
+                    : "bg-[#fff9ef] text-[#1A1A1A] hover:bg-[#FCF3DE]"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* TAB CONTENTS */}
+          <div className="flex-1 flex flex-col gap-3 min-h-[300px] overflow-hidden">
+            {activeTab === "queue" && (
+              <div className="flex-grow flex flex-col gap-3 h-full">
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
+                  <span>QUEUE CONTROLS</span>
+                  <span>{queue.length} TRACKS LOADED</span>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                  {queue.length === 0 ? (
+                    <div className="text-center py-16 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
+                      QUEUE_EMPTY
+                      <span className="block mt-1 text-[10px]">Add songs from other tabs to start a session</span>
+                    </div>
+                  ) : (
+                    queue.map((track, idx) => (
+                      <div
+                        key={`${track.id}-${idx}`}
+                        className="flex items-center justify-between p-2 rounded border border-border-tan bg-surface hover:border-primary transition-all"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img 
+                            src={track.coverUrl} 
+                            alt="Cover" 
+                            className="w-9 h-9 object-cover rounded border border-border-tan flex-shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-black text-text-charcoal truncate">{track.title}</h4>
+                            <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{track.artist}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onPlayTrack(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                          >
+                            <Play className="w-3 h-3 text-primary" />
+                          </button>
+                          <button
+                            onClick={() => removeFromQueue(idx)}
+                            className="p-1 rounded bg-red-50 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "liked" && (
+              <div className="flex-grow flex flex-col gap-3 h-full">
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
+                  <span>LIKED SELECTIONS</span>
+                  <span>{likedTracks.length} SONGS</span>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                  {likedTracks.length === 0 ? (
+                    <div className="text-center py-16 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
+                      NO LIKED SONGS YET
+                      <span className="block mt-1 text-[10px]">Like songs on the turntable to see them here</span>
+                    </div>
+                  ) : (
+                    likedTracks.map((track) => (
+                      <div
+                        key={track.id}
+                        className="flex items-center justify-between p-2 rounded border border-border-tan bg-surface hover:border-primary transition-all"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img 
+                            src={track.coverUrl} 
+                            alt="Cover" 
+                            className="w-9 h-9 object-cover rounded border border-border-tan flex-shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-black text-text-charcoal truncate">{track.title}</h4>
+                            <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{track.artist}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => onPlayTrack(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                            title="Play song"
+                          >
+                            <Play className="w-3 h-3 text-primary" />
+                          </button>
+                          <button
+                            onClick={() => onAddToQueue(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            title="Add to queue"
+                          >
+                            + Q
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "playlist" && (
+              <div className="flex-grow flex flex-col gap-3 h-full">
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
+                  <span>PLAYLIST ARCHIVES</span>
+                  <span>{playlists.length} PLAYLISTS</span>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                  {playlists.length === 0 ? (
+                    <div className="text-center py-16 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
+                      NO PLAYLISTS AVAILABLE
+                      <span className="block mt-1 text-[10px]">Create playlists in the profile tab</span>
+                    </div>
+                  ) : (
+                    playlists.map((pl) => (
+                      <div
+                        key={pl.id}
+                        className="p-2.5 rounded border border-border-tan bg-surface flex flex-col gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={pl.coverUrl} 
+                            alt="Cover" 
+                            className="w-8 h-8 object-cover rounded border border-border-tan"
+                          />
+                          <div>
+                            <h4 className="text-xs font-black text-text-charcoal uppercase">{pl.name}</h4>
+                            <span className="text-[8px] text-gray-400 font-bold block">{pl.tracks?.length || 0} TRACKS</span>
+                          </div>
+                        </div>
+                        {pl.tracks && pl.tracks.length > 0 && (
+                          <div className="flex flex-col gap-1 border-t border-border-tan pt-1.5 mt-1">
+                            {pl.tracks.map((track: Track) => (
+                              <div key={track.id} className="flex justify-between items-center text-[9px] text-gray-600 font-bold py-0.5 hover:text-primary cursor-pointer" onClick={() => onPlayTrack(track)}>
+                                <span className="truncate max-w-[180px]">{track.title} - {track.artist}</span>
+                                <span className="text-[8px] text-gray-400">{track.duration}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "search" && (
+              <div className="flex-grow flex flex-col gap-3 h-full">
+                {/* Local search bar */}
+                <form onSubmit={handleLocalSearchSubmit} className="relative w-full">
+                  <input 
+                    type="text" 
+                    placeholder="Search songs to queue..." 
+                    value={spinningSearchQuery}
+                    onChange={(e) => setSpinningSearchQuery(e.target.value)}
+                    className="w-full bg-surface border border-border-tan py-1.5 pl-8 pr-16 rounded text-[11px] text-text-charcoal focus:outline-none focus:border-primary font-bold"
+                  />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <button 
+                    type="submit"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-primary text-white text-[8px] font-black px-2 py-1 rounded hover:bg-opacity-90 cursor-pointer"
+                  >
+                    SEARCH
+                  </button>
+                </form>
+
+                {/* Local search results list */}
+                <div className="flex-1 overflow-y-auto max-h-[280px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                  {isSearching ? (
+                    <div className="text-center py-12 text-[10px] text-gray-400 animate-pulse">
+                      Searching music archive...
+                    </div>
+                  ) : spinningSearchResults.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 text-[10px]">
+                      {spinningSearchQuery.trim() ? "No matching records found" : "Enter a search term above"}
+                    </div>
+                  ) : (
+                    spinningSearchResults.map((track) => (
+                      <div
+                        key={track.id}
+                        className="flex items-center justify-between p-2 rounded border border-border-tan bg-surface hover:border-primary transition-all"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img 
+                            src={track.coverUrl} 
+                            alt="Cover" 
+                            className="w-9 h-9 object-cover rounded border border-border-tan flex-shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-black text-text-charcoal truncate">{track.title}</h4>
+                            <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{track.artist}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => onPlayTrack(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                            title="Play song"
+                          >
+                            <Play className="w-3 h-3 text-primary" />
+                          </button>
+                          <button
+                            onClick={() => onAddToQueue(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            title="Add to queue"
+                          >
+                            + Q
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,6 @@
+{
+  "name": "MUSIC2D",
+  "description": "A high-density warm-toned brutalist music player. Featuring vinyl turntable visualization, shared listening rooms, physical CD jewel-case grids, and retro hi-fi controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
