@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
 import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio } from "./utils/audio";
-import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack } from "./firebase";
+import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, cleanupEmptyRooms } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
@@ -229,6 +229,15 @@ export default function App() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [user]);
+
+  // Periodic background cleanup of empty private rooms (grace period check)
+  useEffect(() => {
+    cleanupEmptyRooms();
+    const interval = setInterval(() => {
+      cleanupEmptyRooms();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Authentication Guard: if not logged in, restrict to LANDING/LOGIN/REGISTER
   useEffect(() => {

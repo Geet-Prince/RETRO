@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, deleteDoc, getDocs } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForDevelopment123456",
@@ -402,7 +402,8 @@ export async function joinJamRoom(roomId: string, user: any, passcode: string | 
 
       await updateDoc(roomDocRef, {
         listeners: currentListeners,
-        messages: currentMessages
+        messages: currentMessages,
+        emptySince: null // reset grace period since a user is active
       });
     }
 
@@ -439,13 +440,18 @@ export async function leaveJamRoom(roomId: string, userId: string, userName: str
         isSystem: true
       });
 
-      // If empty and not default solaris room, delete it
+      // If empty and not default solaris room, record when it became empty for grace-period deletion
       if (currentListeners.length === 0 && roomId !== "solaris-drift") {
-        await deleteDoc(roomDocRef);
+        await updateDoc(roomDocRef, {
+          listeners: currentListeners,
+          messages: currentMessages,
+          emptySince: Date.now()
+        });
       } else {
         await updateDoc(roomDocRef, {
           listeners: currentListeners,
-          messages: currentMessages
+          messages: currentMessages,
+          emptySince: null
         });
       }
     }
@@ -548,5 +554,33 @@ export async function verifyRoomCredentials(roomId: string, passcode: string) {
   } catch (err) {
     console.error("verifyRoomCredentials error:", err);
     return { success: false, error: "DATABASE_CONNECTION_ERROR" };
+  }
+}
+
+// 8. Background Cleanup of Empty Rooms (Grace period of 1 minute)
+export async function cleanupEmptyRooms() {
+  try {
+    const roomsCol = collection(db, "rooms");
+    const querySnapshot = await getDocs(roomsCol);
+    const now = Date.now();
+    
+    querySnapshot.forEach(async (roomDoc) => {
+      if (roomDoc.id === "solaris-drift") return;
+      
+      const data = roomDoc.data();
+      const listeners = data.listeners || [];
+      
+      if (listeners.length === 0) {
+        const emptySince = data.emptySince;
+        if (emptySince && now - emptySince > 60000) {
+          await deleteDoc(doc(db, "rooms", roomDoc.id));
+          console.log(`[Jamroom Cleanup] Deleted inactive room: ${roomDoc.id}`);
+        } else if (!emptySince) {
+          await updateDoc(doc(db, "rooms", roomDoc.id), { emptySince: now });
+        }
+      }
+    });
+  } catch (err) {
+    console.warn("Error running jamroom cleanup:", err);
   }
 }
