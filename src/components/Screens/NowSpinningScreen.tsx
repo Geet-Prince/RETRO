@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Track } from "../../types";
 import { Turntable } from "../Turntable";
-import { WaveformVisualizer } from "../WaveformVisualizer";
 import { Sparkles, ListMusic, Heart, Music, Search, Plus, Play, Trash2 } from "lucide-react";
 
 interface NowSpinningScreenProps {
@@ -112,8 +111,6 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
             isLiked={likedTracks.some((t) => t.id === currentTrack.id)}
             onToggleLike={() => onToggleLike(currentTrack)}
           />
-          
-          <WaveformVisualizer isPlaying={isPlaying} />
         </div>
 
         {/* Right 5 Columns: Interactive Multi-Tab Console */}

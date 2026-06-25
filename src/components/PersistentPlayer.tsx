@@ -100,6 +100,27 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
     setProgressSecs(0);
   }, [currentTrack]);
 
+  // Waveform height states for transparent background strip
+  const [waveHeights, setWaveHeights] = useState<number[]>(new Array(100).fill(12));
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setWaveHeights(
+          Array.from({ length: 100 }, () => Math.floor(Math.random() * 65) + 5)
+        );
+      }, 100);
+    } else {
+      // Gentle warm standby line
+      setWaveHeights(new Array(100).fill(6));
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlaying]);
+
   // Seconds formatter helper
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -158,17 +179,46 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
   ];
 
   return (
-    <div className="w-full bg-[#1A1A1A] text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40">
+    <div className="w-full bg-[#1A1A1A] text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden">
       {/* Top absolute progress bar for mobile */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800 md:hidden">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800 md:hidden z-20">
         <div 
           className="h-full bg-primary transition-all duration-100 ease-out"
           style={{ width: `${(progressSecs / totalSecs) * 100}%` }}
         />
       </div>
 
+      {/* Background Full-Width Transparent Waveform */}
+      <div className="absolute inset-0 z-0 opacity-15 pointer-events-none flex items-end justify-between gap-[1px]">
+        {waveHeights.map((h, idx) => {
+          let bgColor = "#fff9ef"; // Default Cream
+          if (isPlaying) {
+            if (h > 45) {
+              bgColor = "#ff6b00"; // Site orange (primary)
+            } else if (h > 25) {
+              bgColor = "#a04100"; // Dark rust orange
+            } else {
+              bgColor = "#FAF3E0"; // Muted cream
+            }
+          } else {
+            bgColor = "#555555"; // Standby gray
+          }
+
+          return (
+            <div
+              key={idx}
+              className="w-full transition-all duration-100 ease-out rounded-t-xs"
+              style={{
+                height: `${h}%`,
+                backgroundColor: bgColor,
+              }}
+            />
+          );
+        })}
+      </div>
+
       {/* Track info panel */}
-      <div className="flex items-center gap-2 md:gap-3 flex-1 md:w-72 min-w-0">
+      <div className="relative z-10 flex items-center gap-2 md:gap-3 flex-1 md:w-72 min-w-0">
         <div className="relative group w-10 h-10 md:w-12 md:h-12 rounded border border-border-tan overflow-hidden flex-shrink-0">
           <img 
             src={currentTrack.coverUrl} 
@@ -191,7 +241,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       </div>
 
       {/* Playback Controls & Progress Bar (Desktop only) */}
-      <div className="hidden md:flex flex-1 max-w-xl flex-col items-center gap-1.5 mx-4">
+      <div className="relative z-10 hidden md:flex flex-1 max-w-xl flex-col items-center gap-1.5 mx-4">
         <div className="flex items-center gap-4">
           <button 
             onClick={toggleShuffle}
@@ -257,7 +307,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       </div>
 
       {/* Mobile Playback Controls */}
-      <div className="flex md:hidden items-center gap-3 flex-shrink-0">
+      <div className="relative z-10 flex md:hidden items-center gap-3 flex-shrink-0">
         <button 
           onClick={onPrev}
           className="p-1 text-gray-400 hover:text-[#fff9ef] transition-colors"
@@ -283,7 +333,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       </div>
 
       {/* Volume & Auxiliary panel */}
-      <div className="hidden md:flex items-center justify-end gap-4 w-72">
+      <div className="relative z-10 hidden md:flex items-center justify-end gap-4 w-72">
         {/* Interactive Volume */}
         <div className="flex items-center gap-2">
           <button 
