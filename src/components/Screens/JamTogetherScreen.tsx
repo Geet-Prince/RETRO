@@ -22,6 +22,7 @@ interface JamTogetherScreenProps {
   activeRoomId: string | null;
   setActiveRoomId: (id: string | null) => void;
   roomInfo: any | null;
+  setActiveRoomPasscode: (code: string | null) => void;
 }
 
 export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
@@ -34,13 +35,23 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
   setCurrentTrack,
   activeRoomId,
   setActiveRoomId,
-  roomInfo
+  roomInfo,
+  setActiveRoomPasscode
 }) => {
   const [rooms, setRooms] = useState<any[]>([]);
   
   const [newMsg, setNewMsg] = useState<string>("");
   const [createRoomName, setCreateRoomName] = useState<string>("");
+  const [createPasscode, setCreatePasscode] = useState<string>("");
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
+  
+  // Passcode entry verification
+  const [promptingRoom, setPromptingRoom] = useState<any | null>(null);
+  const [enteredPasscode, setEnteredPasscode] = useState<string>("");
+  const [passcodeError, setPasscodeError] = useState<string>("");
+  
+  // Share modal trigger state
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
   
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,9 +90,39 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
     if (!createRoomName.trim()) return;
 
     const roomId = createRoomName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const code = createPasscode.trim() || null;
+    
+    setActiveRoomPasscode(code);
     setActiveRoomId(roomId);
     setShowCreateForm(false);
     setCreateRoomName("");
+    setCreatePasscode("");
+  };
+
+  const handleTuneIn = (room: any) => {
+    if (room.passcode) {
+      setPromptingRoom(room);
+      setEnteredPasscode("");
+      setPasscodeError("");
+    } else {
+      setActiveRoomPasscode(null);
+      setActiveRoomId(room.roomId);
+    }
+  };
+
+  const handleVerifyPasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promptingRoom) return;
+
+    if (enteredPasscode.trim() === promptingRoom.passcode) {
+      setActiveRoomPasscode(promptingRoom.passcode);
+      setActiveRoomId(promptingRoom.roomId);
+      setPromptingRoom(null);
+      setEnteredPasscode("");
+      setPasscodeError("");
+    } else {
+      setPasscodeError("INCORRECT_VAULT_CODE. VERIFY VALUE.");
+    }
   };
 
   const syncLocalHeadset = () => {
@@ -121,21 +162,34 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
 
         {/* Create room form */}
         {showCreateForm && (
-          <form onSubmit={handleCreateRoom} className="bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col sm:flex-row gap-3 items-end">
-            <div className="flex-1 flex flex-col gap-1 w-full">
-              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION NAME</label>
-              <input 
-                type="text" 
-                placeholder="e.g. LOFI TAPE RETREAT"
-                value={createRoomName}
-                onChange={(e) => setCreateRoomName(e.target.value)}
-                className="w-full bg-surface border border-border-tan text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
-                required
-              />
+          <form onSubmit={handleCreateRoom} className="bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-3 items-stretch">
+            <div className="flex flex-col md:flex-row gap-3 w-full">
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION NAME</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. LOFI TAPE RETREAT"
+                  value={createRoomName}
+                  onChange={(e) => setCreateRoomName(e.target.value)}
+                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
+                  required
+                />
+              </div>
+              <div className="w-full md:w-48 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">PASSCODE (OPTIONAL)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 1234"
+                  maxLength={10}
+                  value={createPasscode}
+                  onChange={(e) => setCreatePasscode(e.target.value)}
+                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
+                />
+              </div>
             </div>
             <button 
               type="submit"
-              className="bg-primary text-white border-2 border-[#1A1A1A] text-xs font-bold px-4 py-1.5 rounded brutalist-shadow cursor-pointer w-full sm:w-auto"
+              className="bg-primary text-white border-2 border-[#1A1A1A] text-xs font-bold px-4 py-1.5 rounded brutalist-shadow cursor-pointer self-end"
             >
               LAUNCH
             </button>
@@ -176,10 +230,11 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
               </div>
 
               <button 
-                onClick={() => setActiveRoomId(room.roomId)}
-                className="w-full bg-[#1A1A1A] text-white hover:bg-primary transition-colors py-2 rounded text-[10px] font-bold uppercase tracking-widest cursor-pointer"
+                onClick={() => handleTuneIn(room)}
+                className="w-full bg-[#1A1A1A] text-white hover:bg-primary transition-colors py-2 rounded text-[10px] font-bold uppercase tracking-widest cursor-pointer flex items-center justify-center gap-1"
               >
-                TUNE IN STATION
+                <span>TUNE IN STATION</span>
+                {room.passcode ? <span title="Requires Passcode">🔒</span> : <span>🔓</span>}
               </button>
             </div>
           ))}
@@ -191,6 +246,50 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
             </div>
           )}
         </div>
+
+        {/* Passcode Entry Modal */}
+        {promptingRoom && (
+          <div className="fixed inset-0 bg-black/75 z-[999] flex items-center justify-center p-4 font-mono text-text-charcoal">
+            <div className="w-full max-w-sm bg-[#FAF3E0] border-2 border-[#1A1A1A] rounded-lg p-5 brutalist-shadow-thick flex flex-col gap-4 relative">
+              <button 
+                onClick={() => setPromptingRoom(null)}
+                className="absolute top-4 right-4 text-xs font-bold text-gray-500 hover:text-black cursor-pointer"
+              >
+                CANCEL [X]
+              </button>
+              <div>
+                <span className="text-[9px] text-primary font-bold block uppercase tracking-widest">STATION LOCKED</span>
+                <h3 className="text-sm font-black uppercase truncate mt-0.5">{promptingRoom.roomName}</h3>
+                <p className="text-[10px] text-gray-500 mt-1">This station is private and requires a join passcode.</p>
+              </div>
+
+              <form onSubmit={handleVerifyPasscode} className="flex flex-col gap-3">
+                <input 
+                  type="password" 
+                  placeholder="ENTER JOIN CODE..."
+                  value={enteredPasscode}
+                  onChange={(e) => setEnteredPasscode(e.target.value)}
+                  className="w-full bg-surface border border-border-tan text-xs px-3 py-2.5 rounded text-center focus:outline-none focus:border-primary text-text-charcoal font-bold tracking-widest"
+                  autoFocus
+                  required
+                />
+                
+                {passcodeError && (
+                  <span className="text-[9px] text-red-600 font-bold text-center bg-red-50 p-1.5 rounded border border-red-200">
+                    {passcodeError}
+                  </span>
+                )}
+
+                <button 
+                  type="submit"
+                  className="w-full bg-[#1A1A1A] hover:bg-primary text-white text-xs font-bold py-2 rounded transition-colors cursor-pointer"
+                >
+                  ACCESS STATION
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -222,11 +321,7 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
 
         <div className="flex gap-2">
           <button 
-            onClick={() => {
-              const urlCode = `m2d://jam/${activeRoomId}`;
-              navigator.clipboard.writeText(urlCode);
-              alert(`STATION CODE COPIED:\n${urlCode}`);
-            }}
+            onClick={() => setShowShareModal(true)}
             className="bg-primary text-white border border-primary text-[10px] font-bold px-3 py-1.5 rounded hover:bg-opacity-95 shadow cursor-pointer"
           >
             SHARE STATION
@@ -431,6 +526,74 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
           </div>
         </div>
       </div>
-    </div>
-  );
+
+    {/* Share Station Invite Link & QR Modal */}
+    {showShareModal && (
+      <div className="fixed inset-0 bg-black/75 z-[999] flex items-center justify-center p-4 font-mono text-text-charcoal">
+        <div className="w-full max-w-md bg-[#FAF3E0] border-2 border-[#1A1A1A] rounded-lg p-5 brutalist-shadow-thick flex flex-col gap-4 relative">
+          <button 
+            onClick={() => setShowShareModal(false)}
+            className="absolute top-4 right-4 text-xs font-bold text-gray-500 hover:text-black cursor-pointer"
+          >
+            CLOSE [X]
+          </button>
+          
+          <div>
+            <span className="text-[9px] text-primary font-bold block uppercase tracking-widest font-black">SHARE_BROADCAST_SIGNAL</span>
+            <h3 className="text-sm font-black uppercase truncate mt-0.5">{roomInfo?.roomName}</h3>
+          </div>
+
+          {/* QR Code section */}
+          <div className="flex flex-col items-center gap-3 bg-surface p-4 rounded border border-border-tan shadow-inner">
+            <span className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">SCAN TO LISTEN IN</span>
+            <div className="w-40 h-40 border border-gray-400 bg-white p-2 rounded flex items-center justify-center relative shadow-sm">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=1A1A1A&bgcolor=FAF3E0&data=${encodeURIComponent(
+                  `${window.location.origin}/?room=${activeRoomId}${roomInfo?.passcode ? `&code=${roomInfo.passcode}` : ""}`
+                )}`} 
+                alt="Station QR Code" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <p className="text-[8px] text-gray-500 text-center leading-normal">
+              Point any mobile camera to this QR code to join this session immediately.
+            </p>
+          </div>
+
+          {/* Code / Link Copy */}
+          <div className="flex flex-col gap-3">
+            {roomInfo?.passcode && (
+              <div className="flex items-center justify-between text-xs font-bold bg-[#FCF3DE] p-2 rounded border border-primary/20">
+                <span className="text-gray-500 uppercase text-[9px]">JOIN PASSCODE:</span>
+                <span className="text-primary tracking-widest select-all">{roomInfo.passcode}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">DIRECT LINK</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  readOnly
+                  value={`${window.location.origin}/?room=${activeRoomId}${roomInfo?.passcode ? `&code=${roomInfo.passcode}` : ""}`}
+                  className="flex-1 bg-surface border border-border-tan text-[9px] px-2 py-1.5 rounded text-gray-600 select-all font-bold focus:outline-none"
+                />
+                <button 
+                  onClick={() => {
+                    const link = `${window.location.origin}/?room=${activeRoomId}${roomInfo?.passcode ? `&code=${roomInfo.passcode}` : ""}`;
+                    navigator.clipboard.writeText(link);
+                    alert("INVITE LINK COPIED TO CLIPBOARD!");
+                  }}
+                  className="bg-primary text-white text-[10px] px-3 font-bold rounded border border-primary hover:bg-opacity-90 cursor-pointer flex-shrink-0"
+                >
+                  COPY LINK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 };

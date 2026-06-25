@@ -53,6 +53,7 @@ export default function App() {
   // Jam Room Global State
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [roomInfo, setRoomInfo] = useState<any | null>(null);
+  const [activeRoomPasscode, setActiveRoomPasscode] = useState<string | null>(null);
 
   // Load trending songs from JioSaavn API on mount
   useEffect(() => {
@@ -159,7 +160,7 @@ export default function App() {
 
     let unsubscribeDoc: (() => void) | null = null;
 
-    joinJamRoom(activeRoomId, user, (updatedRoom) => {
+    joinJamRoom(activeRoomId, user, activeRoomPasscode, (updatedRoom) => {
       setRoomInfo(updatedRoom);
 
       const dbTrack = updatedRoom.currentTrack;
@@ -167,7 +168,13 @@ export default function App() {
         const localTime = getAudioCurrentTime();
         const isDiffTrack = dbTrack.id !== currentTrackRef.current?.id;
         const isDiffPlayState = updatedRoom.isPlaying !== isPlayingRef.current;
-        const isTimeDrifted = updatedRoom.isPlaying && Math.abs(localTime - updatedRoom.progressSecs) > 4;
+        
+        // Loop-fix: calculate estimated database progress using lastUpdated timestamp to prevent resets on chat
+        const dbLastUpdated = updatedRoom.lastUpdated || Date.now();
+        const elapsedSecs = Math.max(0, Math.floor((Date.now() - dbLastUpdated) / 1000));
+        const dbEstimatedProgress = updatedRoom.isPlaying ? (updatedRoom.progressSecs + elapsedSecs) : updatedRoom.progressSecs;
+        
+        const isTimeDrifted = updatedRoom.isPlaying && Math.abs(localTime - dbEstimatedProgress) > 5;
 
         if (isDiffTrack || isDiffPlayState || isTimeDrifted) {
           // Update local state without writing back to Firestore (skip sync)
@@ -175,7 +182,7 @@ export default function App() {
           setIsPlaying(updatedRoom.isPlaying);
           if (isDiffTrack || isTimeDrifted) {
             setTimeout(() => {
-              seekAudio(updatedRoom.progressSecs);
+              seekAudio(dbEstimatedProgress);
             }, 500);
           }
         }
@@ -191,7 +198,7 @@ export default function App() {
       leaveJamRoom(activeRoomId, user.uid || "guest", user.name);
       setRoomInfo(null);
     };
-  }, [activeRoomId, user]);
+  }, [activeRoomId, user, activeRoomPasscode]);
 
   // Host-only periodic playback progress sync (every 8 seconds to prevent db spam)
   useEffect(() => {
@@ -208,6 +215,20 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, [activeRoomId, roomInfo, isPlaying, user]);
+
+  // Handle invite links on mount (e.g. ?room=solaris-drift&code=1234)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlRoom = params.get("room");
+    const urlCode = params.get("code");
+    if (urlRoom && user) {
+      setActiveRoomId(urlRoom);
+      setActiveRoomPasscode(urlCode);
+      setScreen(Screen.JAM_TOGETHER);
+      // Clean URL params to keep address bar tidy
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [user]);
 
   // Authentication Guard: if not logged in, restrict to LANDING/LOGIN/REGISTER
   useEffect(() => {
@@ -681,6 +702,7 @@ export default function App() {
                 activeRoomId={activeRoomId}
                 setActiveRoomId={setActiveRoomId}
                 roomInfo={roomInfo}
+                setActiveRoomPasscode={setActiveRoomPasscode}
               />
             )}
             {currentScreen === Screen.PROFILE && (

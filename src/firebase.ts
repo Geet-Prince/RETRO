@@ -341,7 +341,9 @@ export function listenToJamRooms(onUpdate: (rooms: any[]) => void) {
         messages: [
           { id: "msg-1", user: "Stitch (DJ)", text: "Welcome to the drift session. Turning up the bass for this next one.", timestamp: "12:45 PM", isDj: true }
         ],
-        vibe: 85
+        vibe: 85,
+        lastUpdated: Date.now() - 45000,
+        passcode: ""
       });
     }
     onUpdate(list);
@@ -351,7 +353,7 @@ export function listenToJamRooms(onUpdate: (rooms: any[]) => void) {
 }
 
 // 2. Join a jam room
-export async function joinJamRoom(roomId: string, user: any, onUpdate: (room: any) => void) {
+export async function joinJamRoom(roomId: string, user: any, passcode: string | null, onUpdate: (room: any) => void) {
   const roomDocRef = doc(db, "rooms", roomId);
   const userId = user.uid || `guest-${Date.now()}`;
   const newListener = {
@@ -383,7 +385,8 @@ export async function joinJamRoom(roomId: string, user: any, onUpdate: (room: an
         lastUpdated: Date.now(),
         listeners: [{ ...newListener, isDj: true }],
         messages: [welcomeMsg],
-        vibe: 50
+        vibe: 50,
+        passcode: passcode || ""
       };
       await setDoc(roomDocRef, initialRoom);
     } else {
