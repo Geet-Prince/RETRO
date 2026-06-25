@@ -1,6 +1,7 @@
 let audioCtx: AudioContext | null = null;
 let oscillator: OscillatorNode | null = null;
 let gainNode: GainNode | null = null;
+let analyser: AnalyserNode | null = null;
 
 // HTML5 audio elements for real audio streams
 let htmlAudio: HTMLAudioElement | null = null;
@@ -12,6 +13,69 @@ function initAudio() {
   }
   if (audioCtx.state === "suspended") {
     audioCtx.resume();
+  }
+}
+
+function connectAudioSource(audioElement: HTMLAudioElement) {
+  try {
+    initAudio();
+    if (!audioCtx) return;
+    if (!analyser) {
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+    }
+    const source = audioCtx.createMediaElementSource(audioElement);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  } catch (e) {
+    console.warn("Failed to connect HTML Audio to Web Audio API (CORS/Node limit):", e);
+  }
+}
+
+let simPhase = 0;
+function getSimulatedAnalyserData() {
+  const playing = htmlAudio ? !htmlAudio.paused : false;
+  if (!playing) {
+    simPhase += 0.005;
+    return {
+      bass: 0.05 + Math.sin(simPhase) * 0.02,
+      mid: 0.03 + Math.cos(simPhase * 1.5) * 0.01,
+      treble: 0.02 + Math.sin(simPhase * 2.2) * 0.01
+    };
+  }
+  simPhase += 0.03;
+  const beat = Math.pow(Math.sin(simPhase * 0.8), 4);
+  return {
+    bass: 0.15 + beat * 0.45 + Math.sin(simPhase * 2.3) * 0.1,
+    mid: 0.12 + Math.sin(simPhase * 1.7) * 0.15 + Math.cos(simPhase * 3.1) * 0.08,
+    treble: 0.08 + Math.cos(simPhase * 4.5) * 0.12 + Math.sin(simPhase * 2.9) * 0.06
+  };
+}
+
+export function getAnalyserData() {
+  if (!audioCtx || !analyser) {
+    return getSimulatedAnalyserData();
+  }
+  try {
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyser.getByteFrequencyData(dataArray);
+
+    let bassSum = 0;
+    let midSum = 0;
+    let trebleSum = 0;
+
+    for (let i = 0; i < 8; i++) bassSum += dataArray[i];
+    for (let i = 8; i < 35; i++) midSum += dataArray[i];
+    for (let i = 35; i < 80; i++) trebleSum += dataArray[i];
+
+    return {
+      bass: (bassSum / 8) / 255,
+      mid: (midSum / 27) / 255,
+      treble: (trebleSum / 45) / 255
+    };
+  } catch (err) {
+    return getSimulatedAnalyserData();
   }
 }
 
@@ -33,6 +97,8 @@ export function playAudioStream(url: string, onEnded?: () => void) {
     }
     
     htmlAudio = new Audio(url);
+    htmlAudio.crossOrigin = "anonymous";
+    connectAudioSource(htmlAudio);
     
     if (onEnded) {
       onAudioEndedCallback = onEnded;

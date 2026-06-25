@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Track } from "../types";
 import { 
   Play, 
@@ -14,7 +14,60 @@ import {
   VolumeX,
   Sparkles
 } from "lucide-react";
-import { seekAudio, setAudioVolume, getAudioCurrentTime } from "../utils/audio";
+import { seekAudio, setAudioVolume, getAudioCurrentTime, getAnalyserData } from "../utils/audio";
+
+// 2D Perlin Noise implementation for organic topographic wave rendering
+const PERMUTATION = new Uint8Array([
+  151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
+  190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,
+  136,171,168, 68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,
+  46,245,40,244,102,143,54, 65,25,63,161, 1,216,80,73,209,76,132,187,208, 89,18,169,200,196,135,130,116,188,159,
+  86,164,100,109,198,173,186, 3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,
+  58,17,182,189,28,42,223,183,170,213,119,248,152, 2,44,154,163, 70,221,153,101,155,167, 43,172,9,129,22,39,253,
+  19,98,108,110,79,113,224,232,178,185, 112,104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241, 81,51,145,
+  235,249,14,239,107,49,192,214, 31,181,199,106,157,184, 84,204,176,115,121,50,45,127, 4,150,254,138,236,205,93,222,
+  114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
+]);
+
+const p = new Uint8Array(512);
+for (let i = 0; i < 256; i++) {
+  p[i] = PERMUTATION[i];
+  p[i + 256] = PERMUTATION[i];
+}
+
+function fade(t: number): number {
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+function lerp(t: number, a: number, b: number): number {
+  return a + t * (b - a);
+}
+
+function grad(hash: number, x: number, y: number): number {
+  const h = hash & 15;
+  const u = h < 8 ? x : y;
+  const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
+  return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+}
+
+function perlin2D(x: number, y: number): number {
+  const X = Math.floor(x) & 255;
+  const Y = Math.floor(y) & 255;
+
+  x -= Math.floor(x);
+  y -= Math.floor(y);
+
+  const u = fade(x);
+  const v = fade(y);
+
+  const A = p[X] + Y;
+  const B = p[X + 1] + Y;
+
+  return lerp(v,
+    lerp(u, grad(p[A], x, y), grad(p[B], x - 1, y)),
+    lerp(u, grad(p[A + 1], x, y - 1), grad(p[B + 1], x - 1, y - 1))
+  );
+}
 
 interface PersistentPlayerProps {
   currentTrack: Track;
@@ -100,26 +153,138 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
     setProgressSecs(0);
   }, [currentTrack]);
 
-  // Waveform height states for transparent background strip
-  const [waveHeights, setWaveHeights] = useState<number[]>(new Array(100).fill(12));
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Generative art visualizer setup
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setWaveHeights(
-          Array.from({ length: 100 }, () => Math.floor(Math.random() * 65) + 5)
-        );
-      }, 100);
-    } else {
-      // Gentle warm standby line
-      setWaveHeights(new Array(100).fill(6));
-    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let time = 0;
+    let lastTime = performance.now();
+
+    // Smooth reactive parameters to filter spikes
+    let smoothBass = 0.05;
+    let smoothMid = 0.03;
+    let smoothTreble = 0.02;
+
+    // Cache sizing to prevent reflows/layout thrashing at 60fps
+    let cachedWidth = canvas.clientWidth;
+    let cachedHeight = canvas.clientHeight;
+
+    const handleResize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      cachedWidth = canvas.clientWidth;
+      cachedHeight = canvas.clientHeight;
+      canvas.width = cachedWidth * dpr;
+      canvas.height = cachedHeight * dpr;
+      ctx.scale(dpr, dpr);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    const render = (now: number) => {
+      const deltaTime = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      // 1. Fetch Web Audio API frequency bands
+      const data = getAnalyserData();
+
+      // 2. Interpolate audio values with responsive easing
+      const lerpSpeed = 7.0;
+      smoothBass += (data.bass - smoothBass) * lerpSpeed * deltaTime;
+      smoothMid += (data.mid - smoothMid) * lerpSpeed * deltaTime;
+      smoothTreble += (data.treble - smoothTreble) * lerpSpeed * deltaTime;
+
+      // 3. Dynamic speed controls: waves move faster during intense parts
+      const speedFactor = 0.35 + smoothBass * 1.4 + smoothMid * 0.7;
+      time += deltaTime * speedFactor;
+
+      // Clear Canvas to baseline #151515
+      ctx.fillStyle = "#151515";
+      ctx.fillRect(0, 0, cachedWidth, cachedHeight);
+
+      // Light additive alpha blending for topographic glow effect
+      ctx.globalCompositeOperation = "lighter";
+
+      const N = 80; // 80 horizontal lines (premium generative grid)
+      const spacing = cachedHeight / (N + 1);
+
+      for (let i = 0; i < N; i++) {
+        const baseY = (i + 1) * spacing;
+        const centerDist = Math.abs(i - (N - 1) / 2) / ((N - 1) / 2);
+        
+        // Depth Fade: center lines are stronger, outer lines dissolve smoothly
+        const opacityMult = Math.pow(Math.cos(centerDist * Math.PI / 2), 1.5);
+
+        // Curated white opacities
+        const baseAlphas = [0.08, 0.15, 0.22];
+        const baseAlpha = baseAlphas[i % 3];
+
+        // Highlight beat responsiveness (strong bass slightly brightens lines)
+        let alpha = baseAlpha * opacityMult;
+        alpha += smoothBass * 0.10 * opacityMult;
+        alpha = Math.max(0, Math.min(1, alpha));
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = 0.75;
+
+        ctx.beginPath();
+
+        // Edge containment: flatten lines as they approach top/bottom boundaries
+        const dispMult = Math.cos(centerDist * Math.PI / 2);
+
+        // Amplitudes map directly to audio bands
+        const bassAmp = (0.04 + smoothBass * 0.96) * 15.0 * dispMult;
+        const midAmp = (0.015 + smoothMid * 0.985) * 7.5 * dispMult;
+        const trebleAmp = (0.003 + smoothTreble * 0.997) * 2.2 * dispMult;
+
+        // Curvature/complexity scale based on mids and highs
+        const curvatureScale = 1.0 + (smoothMid + smoothTreble) * 0.7;
+
+        const step = 10;
+        for (let x = 0; x <= cachedWidth; x += step) {
+          // Large slow hills (using 2D Perlin noise)
+          const bassNoiseX = x * 0.0012 * curvatureScale + time * 0.12 + i * 0.015;
+          const bassNoiseY = i * 0.04 + time * 0.03;
+          const bassVal = perlin2D(bassNoiseX, bassNoiseY);
+
+          // Medium ripples (sine/cosine math)
+          const midVal = Math.sin(x * 0.006 * curvatureScale + time * 0.45 + i * 0.12) * 
+                         Math.cos(x * 0.0028 + time * 0.22 + i * 0.06);
+
+          // Tiny detailed oscillations (treble)
+          const trebleVal = Math.sin(x * 0.024 * curvatureScale + time * 1.1 + i * 0.25) * 
+                            Math.cos(x * 0.012 + time * 0.55 + i * 0.12);
+
+          const dy = (bassVal * bassAmp) + (midVal * midAmp) + (trebleVal * trebleAmp);
+          const y = baseY + dy;
+
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        ctx.stroke();
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
-      if (interval) clearInterval(interval);
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying]);
+  }, []);
 
   // Seconds formatter helper
   const formatTime = (secs: number) => {
@@ -179,7 +344,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
   ];
 
   return (
-    <div className="w-full bg-[#1A1A1A] text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden">
+    <div className="w-full bg-[#151515] text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden">
       {/* Top absolute progress bar for mobile */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800 md:hidden z-20">
         <div 
@@ -188,34 +353,11 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
         />
       </div>
 
-      {/* Background Full-Width Transparent Waveform */}
-      <div className="absolute inset-0 z-0 opacity-15 pointer-events-none flex items-end justify-between gap-[1px]">
-        {waveHeights.map((h, idx) => {
-          let bgColor = "#fff9ef"; // Default Cream
-          if (isPlaying) {
-            if (h > 45) {
-              bgColor = "#ff6b00"; // Site orange (primary)
-            } else if (h > 25) {
-              bgColor = "#a04100"; // Dark rust orange
-            } else {
-              bgColor = "#FAF3E0"; // Muted cream
-            }
-          } else {
-            bgColor = "#555555"; // Standby gray
-          }
-
-          return (
-            <div
-              key={idx}
-              className="w-full transition-all duration-100 ease-out rounded-t-xs"
-              style={{
-                height: `${h}%`,
-                backgroundColor: bgColor,
-              }}
-            />
-          );
-        })}
-      </div>
+      {/* Generative Art Topographic Line Wave Visualizer */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+      />
 
       {/* Track info panel */}
       <div className="relative z-10 flex items-center gap-2 md:gap-3 flex-1 md:w-72 min-w-0">
