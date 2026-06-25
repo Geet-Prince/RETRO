@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
-import { playSynthTone, stopSynthTone, updateSynthFrequency } from "./utils/audio";
-import { toggleLikeTrack, addRecentlyPlayed } from "./firebase";
+import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio } from "./utils/audio";
+import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
@@ -49,6 +49,10 @@ export default function App() {
   const [trendingAlbums, setTrendingAlbums] = useState<any[]>([]);
   const [activeAlbumDetails, setActiveAlbumDetails] = useState<any | null>(null);
   const [isAlbumLoading, setIsAlbumLoading] = useState(false);
+
+  // Jam Room Global State
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [roomInfo, setRoomInfo] = useState<any | null>(null);
 
   // Load trending songs from JioSaavn API on mount
   useEffect(() => {
@@ -137,6 +141,74 @@ export default function App() {
     };
   }, []);
 
+  // Refs for current track and playing state to prevent stale closures in global Firestore listeners
+  const currentTrackRef = React.useRef(currentTrack);
+  const isPlayingRef = React.useRef(isPlaying);
+
+  useEffect(() => {
+    currentTrackRef.current = currentTrack;
+  }, [currentTrack]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  // Connect and sync with the active Jam room
+  useEffect(() => {
+    if (!activeRoomId || !user) return;
+
+    let unsubscribeDoc: (() => void) | null = null;
+
+    joinJamRoom(activeRoomId, user, (updatedRoom) => {
+      setRoomInfo(updatedRoom);
+
+      const dbTrack = updatedRoom.currentTrack;
+      if (dbTrack) {
+        const localTime = getAudioCurrentTime();
+        const isDiffTrack = dbTrack.id !== currentTrackRef.current?.id;
+        const isDiffPlayState = updatedRoom.isPlaying !== isPlayingRef.current;
+        const isTimeDrifted = updatedRoom.isPlaying && Math.abs(localTime - updatedRoom.progressSecs) > 4;
+
+        if (isDiffTrack || isDiffPlayState || isTimeDrifted) {
+          // Update local state without writing back to Firestore (skip sync)
+          setCurrentTrack(dbTrack);
+          setIsPlaying(updatedRoom.isPlaying);
+          if (isDiffTrack || isTimeDrifted) {
+            setTimeout(() => {
+              seekAudio(updatedRoom.progressSecs);
+            }, 500);
+          }
+        }
+      }
+    }).then((unsub) => {
+      unsubscribeDoc = unsub;
+    }).catch((e) => {
+      console.error("Failed to join Jam room globally", e);
+    });
+
+    return () => {
+      if (unsubscribeDoc) unsubscribeDoc();
+      leaveJamRoom(activeRoomId, user.uid || "guest", user.name);
+      setRoomInfo(null);
+    };
+  }, [activeRoomId, user]);
+
+  // Host-only periodic playback progress sync (every 8 seconds to prevent db spam)
+  useEffect(() => {
+    if (!activeRoomId || !roomInfo || roomInfo.hostId !== user?.uid || !isPlaying) return;
+
+    const interval = setInterval(() => {
+      updateJamRoomTrack(
+        activeRoomId,
+        currentTrackRef.current,
+        isPlayingRef.current,
+        Math.floor(getAudioCurrentTime())
+      );
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [activeRoomId, roomInfo, isPlaying, user]);
+
   // Authentication Guard: if not logged in, restrict to LANDING/LOGIN/REGISTER
   useEffect(() => {
     if (!user) {
@@ -168,6 +240,11 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    if (activeRoomId && user) {
+      leaveJamRoom(activeRoomId, user.uid || "guest", user.name);
+    }
+    setActiveRoomId(null);
+    setRoomInfo(null);
     setUser(null);
     setLikedTrackIds([]);
     setLikedTracks([]);
@@ -180,9 +257,13 @@ export default function App() {
   };
 
   // Playback Control Handlers
-  const handlePlayTrack = async (track: Track) => {
+  const handlePlayTrack = async (track: Track, skipFirebaseSync: boolean = false) => {
     setCurrentTrack(track);
     setIsPlaying(true);
+    
+    if (activeRoomId && !skipFirebaseSync) {
+      updateJamRoomTrack(activeRoomId, track, true, 0);
+    }
     
     // Save to recently played database
     if (user && user.uid) {
@@ -196,7 +277,11 @@ export default function App() {
   };
 
   const handleTogglePlay = () => {
-    setIsPlaying(!isPlaying);
+    const nextPlaying = !isPlaying;
+    setIsPlaying(nextPlaying);
+    if (activeRoomId) {
+      updateJamRoomTrack(activeRoomId, currentTrack, nextPlaying, Math.floor(getAudioCurrentTime()));
+    }
   };
 
   const handleNextTrack = () => {
@@ -205,6 +290,9 @@ export default function App() {
       setQueue((prev) => prev.slice(1));
       setCurrentTrack(next);
       setIsPlaying(true);
+      if (activeRoomId) {
+        updateJamRoomTrack(activeRoomId, next, true, 0);
+      }
     } else {
       // Loop or go to next index of all trending tracks
       const currentIndex = trendingTracks.findIndex((t) => t.id === currentTrack.id);
@@ -590,6 +678,9 @@ export default function App() {
                 isPlaying={isPlaying}
                 setIsPlaying={setIsPlaying}
                 setCurrentTrack={setCurrentTrack}
+                activeRoomId={activeRoomId}
+                setActiveRoomId={setActiveRoomId}
+                roomInfo={roomInfo}
               />
             )}
             {currentScreen === Screen.PROFILE && (

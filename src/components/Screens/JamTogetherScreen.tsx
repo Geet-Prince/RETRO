@@ -19,18 +19,9 @@ interface JamTogetherScreenProps {
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
   setCurrentTrack: (track: Track) => void;
-}
-
-interface RoomInfo {
-  roomId: string;
-  roomName: string;
-  hostId: string;
-  currentTrack: Track | null;
-  isPlaying: boolean;
-  progressSecs: number;
-  listeners: Listener[];
-  messages: ChatMessage[];
-  vibe: number;
+  activeRoomId: string | null;
+  setActiveRoomId: (id: string | null) => void;
+  roomInfo: any | null;
 }
 
 export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
@@ -40,11 +31,12 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
   currentTrack,
   isPlaying,
   setIsPlaying,
-  setCurrentTrack
+  setCurrentTrack,
+  activeRoomId,
+  setActiveRoomId,
+  roomInfo
 }) => {
-  const [rooms, setRooms] = useState<RoomInfo[]>([]);
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
   
   const [newMsg, setNewMsg] = useState<string>("");
   const [createRoomName, setCreateRoomName] = useState<string>("");
@@ -62,71 +54,12 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
     }
   }, [activeRoomId]);
 
-  // Connect to Firestore Jam Room when joining
-  useEffect(() => {
-    if (!activeRoomId || !user) return;
-
-    let unsubscribeDoc: (() => void) | null = null;
-    let lastTrackId = "";
-    let lastIsPlaying = false;
-
-    joinJamRoom(activeRoomId, user, (updatedRoom) => {
-      setRoomInfo(updatedRoom);
-      
-      // Synchronize player for listeners (non-hosts)
-      if (updatedRoom.hostId !== user.uid) {
-        const track = updatedRoom.currentTrack;
-        if (track) {
-          if (track.id !== lastTrackId || updatedRoom.isPlaying !== lastIsPlaying) {
-            lastTrackId = track.id;
-            lastIsPlaying = updatedRoom.isPlaying;
-            
-            setCurrentTrack(track);
-            setIsPlaying(updatedRoom.isPlaying);
-            // Small timeout to allow audio component to buffer/load, then seek to host time
-            setTimeout(() => {
-              seekAudio(updatedRoom.progressSecs);
-            }, 500);
-          }
-        }
-      }
-    }).then((unsub) => {
-      unsubscribeDoc = unsub;
-    }).catch((e) => {
-      console.error("Failed to join jam room in Firestore", e);
-    });
-
-    return () => {
-      if (unsubscribeDoc) unsubscribeDoc();
-      leaveJamRoom(activeRoomId, user.uid || "guest", user.name);
-      setRoomInfo(null);
-    };
-  }, [activeRoomId, user]);
-
   // Scroll chat to bottom
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [roomInfo?.messages]);
-
-  // Sync state if user is Host/DJ and updates/plays a song
-  useEffect(() => {
-    if (roomInfo && roomInfo.hostId === user?.uid && activeRoomId) {
-      const dbTrack = roomInfo.currentTrack;
-      const dbIsPlaying = roomInfo.isPlaying;
-      
-      // Update room in Firestore if local playback state differs from DB
-      if (!dbTrack || dbTrack.id !== currentTrack.id || dbIsPlaying !== isPlaying) {
-        updateJamRoomTrack(
-          activeRoomId,
-          currentTrack,
-          isPlaying,
-          Math.floor(getAudioCurrentTime())
-        );
-      }
-    }
-  }, [currentTrack, isPlaying, roomInfo, activeRoomId, user]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
