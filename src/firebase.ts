@@ -525,3 +525,28 @@ export async function sendJamRoomWave(roomId: string, senderName: string, target
     console.error("Firestore sendJamRoomWave error:", err);
   }
 }
+
+// 7. Verify Room Credentials
+export async function verifyRoomCredentials(roomId: string, passcode: string) {
+  const normId = roomId.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  if (normId === "solaris-drift" && passcode.trim() === "") {
+    return { success: true, roomId: "solaris-drift" };
+  }
+
+  try {
+    const roomDocRef = doc(db, "rooms", normId);
+    const roomSnap = await getDoc(roomDocRef);
+    if (!roomSnap.exists()) {
+      return { success: false, error: "STATION_NOT_FOUND" };
+    }
+    const data = roomSnap.data();
+    const storedPasscode = data.passcode || "";
+    if (storedPasscode !== passcode.trim()) {
+      return { success: false, error: "INCORRECT_PASSCODE" };
+    }
+    return { success: true, roomId: normId };
+  } catch (err) {
+    console.error("verifyRoomCredentials error:", err);
+    return { success: false, error: "DATABASE_CONNECTION_ERROR" };
+  }
+}

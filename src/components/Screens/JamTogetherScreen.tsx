@@ -8,7 +8,8 @@ import {
   leaveJamRoom, 
   updateJamRoomTrack, 
   sendJamRoomMessage, 
-  sendJamRoomWave 
+  sendJamRoomWave,
+  verifyRoomCredentials
 } from "../../firebase";
 
 interface JamTogetherScreenProps {
@@ -38,32 +39,21 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
   roomInfo,
   setActiveRoomPasscode
 }) => {
-  const [rooms, setRooms] = useState<any[]>([]);
-  
   const [newMsg, setNewMsg] = useState<string>("");
   const [createRoomName, setCreateRoomName] = useState<string>("");
   const [createPasscode, setCreatePasscode] = useState<string>("");
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   
-  // Passcode entry verification
-  const [promptingRoom, setPromptingRoom] = useState<any | null>(null);
-  const [enteredPasscode, setEnteredPasscode] = useState<string>("");
-  const [passcodeError, setPasscodeError] = useState<string>("");
+  // Join private station states
+  const [joinRoomId, setJoinRoomId] = useState<string>("");
+  const [joinPasscode, setJoinPasscode] = useState<string>("");
+  const [joinError, setJoinError] = useState<string>("");
+  const [isJoining, setIsJoining] = useState<boolean>(false);
   
   // Share modal trigger state
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
   
   const chatEndRef = useRef<HTMLDivElement | null>(null);
-
-  // Fetch rooms list in real-time
-  useEffect(() => {
-    if (!activeRoomId) {
-      const unsubscribe = listenToJamRooms((roomsList) => {
-        setRooms(roomsList);
-      });
-      return () => unsubscribe();
-    }
-  }, [activeRoomId]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -99,29 +89,34 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
     setCreatePasscode("");
   };
 
-  const handleTuneIn = (room: any) => {
-    if (room.passcode) {
-      setPromptingRoom(room);
-      setEnteredPasscode("");
-      setPasscodeError("");
-    } else {
-      setActiveRoomPasscode(null);
-      setActiveRoomId(room.roomId);
-    }
-  };
-
-  const handleVerifyPasscode = (e: React.FormEvent) => {
+  const handleJoinRoomSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!promptingRoom) return;
+    if (!joinRoomId.trim()) return;
 
-    if (enteredPasscode.trim() === promptingRoom.passcode) {
-      setActiveRoomPasscode(promptingRoom.passcode);
-      setActiveRoomId(promptingRoom.roomId);
-      setPromptingRoom(null);
-      setEnteredPasscode("");
-      setPasscodeError("");
-    } else {
-      setPasscodeError("INCORRECT_VAULT_CODE. VERIFY VALUE.");
+    setJoinError("");
+    setIsJoining(true);
+    try {
+      const res = await verifyRoomCredentials(joinRoomId.trim(), joinPasscode.trim());
+      if (res.success && res.roomId) {
+        setActiveRoomPasscode(joinPasscode.trim());
+        setActiveRoomId(res.roomId);
+        setJoinRoomId("");
+        setJoinPasscode("");
+        setJoinError("");
+      } else {
+        if (res.error === "STATION_NOT_FOUND") {
+          setJoinError("STATION NOT FOUND. VERIFY CODE.");
+        } else if (res.error === "INCORRECT_PASSCODE") {
+          setJoinError("INCORRECT VAULT PASSCODE. VERIFY VALUE.");
+        } else {
+          setJoinError("DATABASE ERROR. ATTEMPT RECONNECT.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setJoinError("DATABASE CONNECTION FAILED.");
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -138,158 +133,115 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
   // If not in a room, render Lobby
   if (!activeRoomId) {
     return (
-      <div className="flex-1 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide h-full">
+      <div className="flex-1 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide h-full justify-center items-center">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-tan pb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full border border-border-tan bg-primary flex items-center justify-center animate-pulse">
-              <Radio className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 font-bold tracking-widest block">FIRESTORE_CHANNELS</span>
-              <h2 className="text-base font-bold text-text-charcoal leading-none">JAM LOBBY</h2>
-            </div>
+        <div className="flex flex-col items-center gap-2 text-center max-w-md select-none">
+          <div className="w-12 h-12 rounded-full border border-border-tan bg-primary flex items-center justify-center animate-pulse">
+            <Radio className="w-6 h-6 text-white" />
           </div>
-
-          <button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-primary text-white border border-primary text-[10px] font-bold px-3 py-1.5 rounded hover:bg-opacity-95 shadow cursor-pointer flex items-center gap-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>CREATE STATION</span>
-          </button>
+          <div>
+            <span className="text-[10px] text-gray-400 font-bold tracking-widest block">FIRESTORE_CHANNELS</span>
+            <h2 className="text-lg font-black text-text-charcoal uppercase tracking-wider">SECURE JAM PORTAL</h2>
+            <p className="text-[10px] text-gray-500 mt-1 max-w-xs leading-normal">
+              Browse mode disabled for security. Enter a unique station code and passcode to tune in, or launch a new private station.
+            </p>
+          </div>
         </div>
 
-        {/* Create room form */}
-        {showCreateForm && (
-          <form onSubmit={handleCreateRoom} className="bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-3 items-stretch">
-            <div className="flex flex-col md:flex-row gap-3 w-full">
-              <div className="flex-1 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION NAME</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mt-4">
+          {/* Card A: Join Private Station */}
+          <div className="bg-[#FAF3E0] border-2 border-[#1A1A1A] p-5 rounded-lg brutalist-shadow-thick flex flex-col gap-4">
+            <div>
+              <span className="text-[9px] text-[#ff6b00] font-bold block uppercase tracking-widest">ACCESS_STATION</span>
+              <h3 className="text-sm font-black text-text-charcoal uppercase">TUNE IN TO FRIENDS</h3>
+            </div>
+
+            <form onSubmit={handleJoinRoomSubmit} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION CODE / ID</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. LOFI TAPE RETREAT"
-                  value={createRoomName}
-                  onChange={(e) => setCreateRoomName(e.target.value)}
-                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
+                  placeholder="e.g. lofi-retreat"
+                  value={joinRoomId}
+                  onChange={(e) => setJoinRoomId(e.target.value)}
+                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-2 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
                   required
                 />
               </div>
-              <div className="w-full md:w-48 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">PASSCODE (OPTIONAL)</label>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION PASSCODE</label>
+                <input 
+                  type="password" 
+                  placeholder="ENTER PASSCODE..."
+                  value={joinPasscode}
+                  onChange={(e) => setJoinPasscode(e.target.value)}
+                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-2 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold tracking-wider"
+                />
+              </div>
+
+              {joinError && (
+                <span className="text-[9px] text-red-600 font-bold bg-red-50 p-2 rounded border border-red-200">
+                  DIAGNOSTIC_ERR: {joinError}
+                </span>
+              )}
+
+              <button 
+                type="submit"
+                disabled={isJoining}
+                className="w-full bg-[#1A1A1A] hover:bg-primary text-white text-xs font-black tracking-widest py-3 rounded transition-colors cursor-pointer disabled:opacity-50 mt-2 uppercase"
+              >
+                {isJoining ? "CONNECTING..." : "TUNE IN SIGNAL →"}
+              </button>
+            </form>
+          </div>
+
+          {/* Card B: Create Station */}
+          <div className="bg-[#FAF3E0] border-2 border-[#1A1A1A] p-5 rounded-lg brutalist-shadow-thick flex flex-col gap-4">
+            <div>
+              <span className="text-[9px] text-primary font-bold block uppercase tracking-widest font-black">LAUNCH_BROADCAST</span>
+              <h3 className="text-sm font-black text-text-charcoal uppercase">CREATE NEW STATION</h3>
+            </div>
+
+            <form onSubmit={handleCreateRoom} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION NAME</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. BEATS WORKSHOP"
+                  value={createRoomName}
+                  onChange={(e) => setCreateRoomName(e.target.value)}
+                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-2 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">STATION PASSCODE (OPTIONAL)</label>
                 <input 
                   type="text" 
                   placeholder="e.g. 1234"
                   maxLength={10}
                   value={createPasscode}
                   onChange={(e) => setCreatePasscode(e.target.value)}
-                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
+                  className="w-full bg-surface border border-border-tan text-xs px-2.5 py-2 rounded focus:outline-none focus:border-primary text-text-charcoal font-bold"
                 />
-              </div>
-            </div>
-            <button 
-              type="submit"
-              className="bg-primary text-white border-2 border-[#1A1A1A] text-xs font-bold px-4 py-1.5 rounded brutalist-shadow cursor-pointer self-end"
-            >
-              LAUNCH
-            </button>
-          </form>
-        )}
-
-        {/* Rooms list */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {rooms.map((room) => (
-            <div 
-              key={room.roomId}
-              className="bg-surface border-2 border-[#1A1A1A] rounded-lg p-4 brutalist-shadow flex flex-col justify-between gap-4"
-            >
-              <div>
-                <div className="flex justify-between items-start">
-                  <h3 className="text-sm font-bold text-text-charcoal uppercase tracking-wider">{room.roomName}</h3>
-                  <span className="bg-[#FFEAEA] border border-red-300 text-red-600 text-[8px] font-bold px-1 py-0.2 rounded flex items-center gap-1 animate-pulse">
-                    ● {room.listeners?.length || 0} ONLINE
-                  </span>
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1">Host: {room.hostId === user?.uid ? "YOU" : room.hostId.substring(0, 12)}</p>
-                
-                {room.currentTrack ? (
-                  <div className="mt-3 bg-surface-container p-2 rounded border border-border-tan flex items-center gap-2">
-                    <img 
-                      src={room.currentTrack.coverUrl} 
-                      alt="Cover" 
-                      className="w-8 h-8 rounded object-cover border border-border-tan" 
-                    />
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-[10px] font-bold text-text-charcoal truncate">{room.currentTrack.title}</h4>
-                      <p className="text-[8px] text-gray-400 truncate">{room.currentTrack.artist}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-3 text-[9px] text-gray-400 italic">No track spinning currently</div>
-                )}
               </div>
 
               <button 
-                onClick={() => handleTuneIn(room)}
-                className="w-full bg-[#1A1A1A] text-white hover:bg-primary transition-colors py-2 rounded text-[10px] font-bold uppercase tracking-widest cursor-pointer flex items-center justify-center gap-1"
+                type="submit"
+                className="w-full bg-primary hover:bg-opacity-95 text-white text-xs font-black tracking-widest py-3 rounded transition-all cursor-pointer mt-2 uppercase"
               >
-                <span>TUNE IN STATION</span>
-                {room.passcode ? <span title="Requires Passcode">🔒</span> : <span>🔓</span>}
+                LAUNCH BROADCAST →
               </button>
-            </div>
-          ))}
-
-          {rooms.length === 0 && (
-            <div className="col-span-full py-12 text-center border-2 border-dashed border-border-tan rounded-lg text-gray-400 text-xs">
-              NO ACTIVE STATIONS FOUND
-              <span className="block mt-1 text-[10px]">Create a custom station above to start a session</span>
-            </div>
-          )}
-        </div>
-
-        {/* Passcode Entry Modal */}
-        {promptingRoom && (
-          <div className="fixed inset-0 bg-black/75 z-[999] flex items-center justify-center p-4 font-mono text-text-charcoal">
-            <div className="w-full max-w-sm bg-[#FAF3E0] border-2 border-[#1A1A1A] rounded-lg p-5 brutalist-shadow-thick flex flex-col gap-4 relative">
-              <button 
-                onClick={() => setPromptingRoom(null)}
-                className="absolute top-4 right-4 text-xs font-bold text-gray-500 hover:text-black cursor-pointer"
-              >
-                CANCEL [X]
-              </button>
-              <div>
-                <span className="text-[9px] text-primary font-bold block uppercase tracking-widest">STATION LOCKED</span>
-                <h3 className="text-sm font-black uppercase truncate mt-0.5">{promptingRoom.roomName}</h3>
-                <p className="text-[10px] text-gray-500 mt-1">This station is private and requires a join passcode.</p>
-              </div>
-
-              <form onSubmit={handleVerifyPasscode} className="flex flex-col gap-3">
-                <input 
-                  type="password" 
-                  placeholder="ENTER JOIN CODE..."
-                  value={enteredPasscode}
-                  onChange={(e) => setEnteredPasscode(e.target.value)}
-                  className="w-full bg-surface border border-border-tan text-xs px-3 py-2.5 rounded text-center focus:outline-none focus:border-primary text-text-charcoal font-bold tracking-widest"
-                  autoFocus
-                  required
-                />
-                
-                {passcodeError && (
-                  <span className="text-[9px] text-red-600 font-bold text-center bg-red-50 p-1.5 rounded border border-red-200">
-                    {passcodeError}
-                  </span>
-                )}
-
-                <button 
-                  type="submit"
-                  className="w-full bg-[#1A1A1A] hover:bg-primary text-white text-xs font-bold py-2 rounded transition-colors cursor-pointer"
-                >
-                  ACCESS STATION
-                </button>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
+        </div>
+        
+        {/* Help Tip */}
+        <span className="text-[8px] text-gray-400 font-bold tracking-wider select-none uppercase">
+          TIP: Use default station code &apos;solaris-drift&apos; (leave passcode blank) for public server testing.
+        </span>
       </div>
     );
   }
