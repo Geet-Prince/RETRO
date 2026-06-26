@@ -217,33 +217,37 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
         {
           freq: 2,
           speed: 1.2,
-          amp: 2 + smoothBass * 6,
+          amp: 2 + smoothBass * 18, // increased amplitude for visible beat sync
           color: "rgba(156, 63, 0, ", // primary orange
-          opacity: 0.12,
+          opacity: 0.35, // higher opacity for visibility
+          lineWidth: 1.5,
           phaseShift: time
         },
         {
           freq: 3.5,
           speed: -1.5,
-          amp: 1.5 + smoothMid * 4,
+          amp: 1.5 + smoothMid * 12,
           color: "rgba(200, 184, 154, ", // tan
-          opacity: 0.08,
+          opacity: 0.25,
+          lineWidth: 1.0,
           phaseShift: -time * 1.3
         },
         {
           freq: 5,
           speed: 2.2,
-          amp: 1 + smoothTreble * 3,
+          amp: 1 + smoothTreble * 8,
           color: "rgba(156, 63, 0, ", // primary orange
-          opacity: 0.06,
+          opacity: 0.20,
+          lineWidth: 1.0,
           phaseShift: time * 1.8
         },
         {
           freq: 1.5,
           speed: -0.8,
-          amp: 1.5 + (smoothBass * 0.5 + smoothMid * 0.5) * 4,
+          amp: 1.5 + (smoothBass * 0.5 + smoothMid * 0.5) * 15,
           color: "rgba(200, 184, 154, ", // tan
-          opacity: 0.05,
+          opacity: 0.18,
+          lineWidth: 1.2,
           phaseShift: -time * 0.7
         }
       ];
@@ -267,7 +271,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
 
         // Draw Stroke (thin, elegant lines)
         ctx.strokeStyle = `${w.color}${w.opacity})`;
-        ctx.lineWidth = 1.0;
+        ctx.lineWidth = w.lineWidth;
         ctx.stroke();
       });
 
