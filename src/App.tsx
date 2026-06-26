@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
 import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio } from "./utils/audio";
-import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, cleanupEmptyRooms } from "./firebase";
+import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
@@ -13,12 +13,13 @@ import { NowSpinningScreen } from "./components/Screens/NowSpinningScreen";
 import { DiscoverScreen } from "./components/Screens/DiscoverScreen";
 import { SearchScreen } from "./components/Screens/SearchScreen";
 import { LikedMusicScreen } from "./components/Screens/LikedMusicScreen";
+import { PlaylistScreen } from "./components/Screens/PlaylistScreen";
 import { JamTogetherScreen } from "./components/Screens/JamTogetherScreen";
 import { ProfileScreen } from "./components/Screens/ProfileScreen";
 import { LoginScreen } from "./components/Screens/LoginScreen";
 import { RegisterScreen } from "./components/Screens/RegisterScreen";
 
-import { Bell, Settings, Menu, Play, Plus } from "lucide-react";
+import { Bell, Settings, Menu, Play, Plus, ListMusic } from "lucide-react";
 
 export default function App() {
   // Navigation & Theme
@@ -64,6 +65,72 @@ export default function App() {
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [roomInfo, setRoomInfo] = useState<any | null>(null);
   const [activeRoomPasscode, setActiveRoomPasscode] = useState<string | null>(null);
+
+  // Playlist State & Handlers
+  const [playlistModalTrack, setPlaylistModalTrack] = useState<Track | null>(null);
+
+  const handleCreatePlaylist = async (name: string, trackToInclude: Track | null = null) => {
+    if (!user || !user.uid) return;
+    try {
+      const tracks = trackToInclude ? [trackToInclude] : [];
+      const updatedPlaylists = await addPlaylist(user.uid, name, "", tracks);
+      setPlaylists(updatedPlaylists);
+      
+      // Update local storage session
+      const savedSession = localStorage.getItem("retro_user_session");
+      if (savedSession) {
+        try {
+          const userData = JSON.parse(savedSession);
+          userData.playlists = updatedPlaylists;
+          localStorage.setItem("retro_user_session", JSON.stringify(userData));
+        } catch (err) {}
+      }
+      alert(`Playlist "${name}" created successfully!`);
+      if (trackToInclude) {
+        setPlaylistModalTrack(null);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to create playlist");
+    }
+  };
+
+  const handleAddToPlaylist = async (playlistId: string, track: Track) => {
+    if (!user || !user.uid) {
+      alert("Please log in to add songs to playlists.");
+      return;
+    }
+    try {
+      const updatedPlaylists = await addTrackToPlaylist(user.uid, playlistId, track);
+      setPlaylists(updatedPlaylists);
+      
+      // Update local storage session
+      const savedSession = localStorage.getItem("retro_user_session");
+      if (savedSession) {
+        try {
+          const userData = JSON.parse(savedSession);
+          userData.playlists = updatedPlaylists;
+          localStorage.setItem("retro_user_session", JSON.stringify(userData));
+        } catch (err) {}
+      }
+      alert(`"${track.title}" added to playlist!`);
+      setPlaylistModalTrack(null); // Close modal
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to add song to playlist.");
+    }
+  };
+
+  const handlePlayPlaylist = (playlist: any) => {
+    if (!playlist || !playlist.tracks || playlist.tracks.length === 0) {
+      alert("This playlist has no tracks!");
+      return;
+    }
+    const [firstTrack, ...remainingTracks] = playlist.tracks;
+    handlePlayTrack(firstTrack);
+    setQueue(remainingTracks);
+    alert(`Spinning playlist: "${playlist.name}". Loaded ${remainingTracks.length} tracks into queue.`);
+  };
 
   // Load trending songs from JioSaavn API on mount
   useEffect(() => {
@@ -244,14 +311,7 @@ export default function App() {
     }
   }, [user]);
 
-  // Periodic background cleanup of empty private rooms (grace period check)
-  useEffect(() => {
-    cleanupEmptyRooms();
-    const interval = setInterval(() => {
-      cleanupEmptyRooms();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // Note: Firestore Jam Room cleanup is now handled efficiently on the backend server via real-time listeners.
 
   // Restore User Session on mount
   useEffect(() => {
@@ -729,6 +789,8 @@ export default function App() {
                 onToggleLike={handleToggleLike}
                 playlists={playlists}
                 onAddToQueue={handleAddToQueue}
+                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                onPlayPlaylist={handlePlayPlaylist}
               />
             )}
             {currentScreen === Screen.DISCOVER && (
@@ -740,6 +802,7 @@ export default function App() {
                 onSelectGenre={handleSearchExecute}
                 onSearch={handleSearchExecute}
                 onOpenAlbum={handleOpenAlbum}
+                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
               />
             )}
             {currentScreen === Screen.SEARCH && (
@@ -751,6 +814,7 @@ export default function App() {
                 onAddToQueue={handleAddToQueue}
                 onClearSearch={handleClearSearch}
                 onOpenAlbum={handleOpenAlbum}
+                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
               />
             )}
             {currentScreen === Screen.LIKED_MUSIC && (
@@ -760,6 +824,18 @@ export default function App() {
                 onPlayTrack={handlePlayTrack}
                 onShuffleAll={handleShuffleAllLiked}
                 onToggleLike={handleToggleLike}
+                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+              />
+            )}
+            {currentScreen === Screen.PLAYLIST && (
+              <PlaylistScreen 
+                playlists={playlists}
+                onPlayTrack={handlePlayTrack}
+                onAddToQueue={handleAddToQueue}
+                onPlayPlaylist={handlePlayPlaylist}
+                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                user={user}
+                onCreatePlaylist={(name) => handleCreatePlaylist(name)}
               />
             )}
             {currentScreen === Screen.JAM_TOGETHER && (
@@ -775,6 +851,7 @@ export default function App() {
                 setActiveRoomId={setActiveRoomId}
                 roomInfo={roomInfo}
                 setActiveRoomPasscode={setActiveRoomPasscode}
+                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
               />
             )}
             {currentScreen === Screen.PROFILE && (
@@ -873,11 +950,113 @@ export default function App() {
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
+                        <button
+                          onClick={() => setPlaylistModalTrack(track)}
+                          className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                          title="Add to playlist"
+                        >
+                          <ListMusic className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Playlist Selector Modal */}
+      {playlistModalTrack && (
+        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4 font-mono text-text-charcoal animate-fadeIn">
+          <div className="w-full max-w-md bg-[#FAF3E0] border-2 border-[#1A1A1A] rounded-lg p-5 brutalist-shadow-thick flex flex-col gap-4 relative">
+            <button 
+              onClick={() => setPlaylistModalTrack(null)}
+              className="absolute top-4 right-4 text-xs font-bold text-gray-500 hover:text-black cursor-pointer"
+            >
+              CLOSE [X]
+            </button>
+            
+            <div>
+              <span className="text-[9px] text-primary font-bold block uppercase tracking-widest font-black">ADD_TO_PLAYLIST_COLLECTION</span>
+              <h3 className="text-sm font-black uppercase truncate mt-0.5">{playlistModalTrack.title}</h3>
+              <p className="text-[9px] text-gray-400 font-bold uppercase truncate">{playlistModalTrack.artist}</p>
+            </div>
+
+            <div className="flex flex-col gap-3 max-h-60 overflow-y-auto pr-1">
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">SELECT ACTIVE PLAYLIST:</span>
+              
+              {playlists.length === 0 ? (
+                <div className="text-center py-6 border border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
+                  NO ACTIVE PLAYLISTS
+                </div>
+              ) : (
+                playlists.map((pl) => {
+                  const isAlreadyAdded = pl.tracks && pl.tracks.some((t: any) => t.id === playlistModalTrack.id);
+                  return (
+                    <div 
+                      key={pl.id}
+                      className="flex items-center justify-between p-2 rounded border border-border-tan bg-surface hover:border-primary transition-all"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img 
+                          src={pl.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17"} 
+                          alt="Cover" 
+                          className="w-9 h-9 object-cover rounded border border-border-tan flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-black text-text-charcoal uppercase truncate">{pl.name}</h4>
+                          <span className="text-[8px] text-gray-400 font-bold block">{pl.tracks?.length || 0} TRACKS</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddToPlaylist(pl.id, playlistModalTrack)}
+                        disabled={isAlreadyAdded}
+                        className={`text-[9px] font-black px-3 py-1.5 rounded border transition-colors cursor-pointer disabled:opacity-50 ${
+                          isAlreadyAdded
+                            ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed"
+                            : "bg-[#fff9ef] border-border-tan hover:bg-[#1A1A1A] hover:text-white text-[#1A1A1A]"
+                        }`}
+                      >
+                        {isAlreadyAdded ? "ADDED ✓" : "ADD"}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Create Playlist Form on the fly */}
+            <div className="border-t border-border-tan pt-3 mt-1 flex flex-col gap-2">
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">OR CREATE NEW PLAYLIST:</span>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  const nameInput = form.elements.namedItem("playlistName") as HTMLInputElement;
+                  const name = nameInput.value.trim();
+                  if (name) {
+                    handleCreatePlaylist(name, playlistModalTrack);
+                    nameInput.value = "";
+                  }
+                }}
+                className="flex gap-2"
+              >
+                <input 
+                  type="text"
+                  name="playlistName"
+                  placeholder="NEW PLAYLIST NAME..."
+                  required
+                  className="flex-1 bg-surface border border-border-tan text-xs px-2.5 py-1.5 rounded focus:outline-none focus:border-primary text-text-charcoal placeholder-gray-400 font-bold font-mono"
+                />
+                <button 
+                  type="submit"
+                  className="bg-primary text-white border border-primary text-[10px] px-3 font-bold rounded hover:bg-opacity-95 shadow cursor-pointer uppercase"
+                >
+                  CREATE & ADD
+                </button>
+              </form>
             </div>
           </div>
         </div>

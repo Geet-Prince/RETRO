@@ -10,6 +10,7 @@ interface SearchScreenProps {
   onAddToQueue: (track: Track) => void;
   onClearSearch: () => void;
   onOpenAlbum: (albumId: string) => void;
+  onTriggerAddToPlaylist: (track: Track) => void;
 }
 
 export const SearchScreen: React.FC<SearchScreenProps> = ({
@@ -19,7 +20,8 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
   onPlayTrack,
   onAddToQueue,
   onClearSearch,
-  onOpenAlbum
+  onOpenAlbum,
+  onTriggerAddToPlaylist
 }) => {
   return (
     <div className="flex-1 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide h-full">
@@ -117,13 +119,13 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                 </div>
 
                 {/* Direct Play Hover Overlay */}
-                <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white">
+                <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 text-white">
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       onPlayTrack(track);
                     }}
-                    className="bg-primary hover:bg-opacity-90 text-white text-[9px] font-bold px-3 py-1 rounded border border-primary flex items-center gap-1 cursor-pointer"
+                    className="bg-primary hover:bg-opacity-90 text-white text-[9px] font-bold px-3 py-1 rounded border border-primary flex items-center gap-1 cursor-pointer w-24 justify-center"
                   >
                     <Play className="w-3 h-3 fill-white" />
                     <span>SPIN NOW</span>
@@ -133,10 +135,20 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                       e.stopPropagation();
                       onAddToQueue(track);
                     }}
-                    className="bg-[#1A1A1A] hover:bg-gray-800 text-[#fff9ef] text-[9px] font-bold px-3 py-1 rounded border border-gray-700 flex items-center gap-1 cursor-pointer"
+                    className="bg-[#1A1A1A] hover:bg-gray-800 text-[#fff9ef] text-[9px] font-bold px-3 py-1 rounded border border-gray-700 flex items-center gap-1 cursor-pointer w-24 justify-center"
                   >
                     <Plus className="w-3 h-3" />
                     <span>QUEUE</span>
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTriggerAddToPlaylist(track);
+                    }}
+                    className="bg-white border border-[#1A1A1A] hover:bg-[#FAF3E0] text-[#1A1A1A] text-[9px] font-bold px-3 py-1 rounded flex items-center gap-1 cursor-pointer w-24 justify-center"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>PLAYLIST</span>
                   </button>
                 </div>
               </div>

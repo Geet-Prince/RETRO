@@ -307,6 +307,65 @@ export async function addPlaylist(uid: string, name: string, coverUrl: string, t
   }
 }
 
+// Firestore Add Track to Playlist with LocalStorage fallback
+export async function addTrackToPlaylist(uid: string, playlistId: string, track: any) {
+  const localKey = `music2d_user_${uid}`;
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) throw new Error("User not found in Firestore");
+
+    const userData = userDoc.data();
+    const playlists = userData.playlists || [];
+    const playlist = playlists.find((p: any) => p.id === playlistId);
+    if (!playlist) throw new Error("Playlist not found");
+
+    if (!playlist.tracks) playlist.tracks = [];
+    
+    // Check for duplicate track
+    if (playlist.tracks.some((t: any) => t.id === track.id)) {
+      throw new Error("Song is already in this playlist.");
+    }
+
+    playlist.tracks.push(track);
+    await updateDoc(userDocRef, { playlists });
+
+    // Sync to local storage cache
+    const cachedData = localStorage.getItem(localKey);
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        parsed.playlists = playlists;
+        localStorage.setItem(localKey, JSON.stringify(parsed));
+      } catch (e) {}
+    }
+
+    return playlists;
+  } catch (error: any) {
+    console.warn("Firestore addTrackToPlaylist failed. Using LocalStorage fallback:", error);
+    const cachedData = localStorage.getItem(localKey);
+    let parsed: any = { playlists: [] };
+    if (cachedData) {
+      try {
+        parsed = JSON.parse(cachedData);
+      } catch (e) {}
+    }
+    const playlists = parsed.playlists || [];
+    const playlist = playlists.find((p: any) => p.id === playlistId);
+    if (!playlist) throw new Error("Playlist not found");
+    if (!playlist.tracks) playlist.tracks = [];
+
+    if (playlist.tracks.some((t: any) => t.id === track.id)) {
+      throw new Error("Song is already in this playlist.");
+    }
+
+    playlist.tracks.push(track);
+    parsed.playlists = playlists;
+    localStorage.setItem(localKey, JSON.stringify(parsed));
+    return playlists;
+  }
+}
+
 // --- FIRESTORE REALTIME JAM ROOM SYNC ---
 
 // 1. Get active rooms list in real-time
@@ -352,7 +411,76 @@ export function listenToJamRooms(onUpdate: (rooms: any[]) => void) {
   });
 }
 
-// 2. Join a jam room
+// 2. Create a jam room with a unique ID and duplicate room name check
+export async function createJamRoom(roomName: string, passcode: string | null, user: any) {
+  const normalizedNewName = roomName.trim().toLowerCase();
+  
+  if (normalizedNewName === "solaris drift rec") {
+    throw new Error("A station with this name already exists.");
+  }
+
+  // Check if a room with the same name already exists in Firestore
+  const roomsCol = collection(db, "rooms");
+  const querySnapshot = await getDocs(roomsCol);
+  let nameExists = false;
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.roomName && data.roomName.trim().toLowerCase() === normalizedNewName) {
+      nameExists = true;
+    }
+  });
+
+  if (nameExists) {
+    throw new Error("A station with this name already exists.");
+  }
+
+  // Generate a unique 6-character lowercase alphanumeric code
+  let uniqueId = "";
+  let idExists = true;
+  while (idExists) {
+    // Generate a 6-character alphanumeric code
+    uniqueId = Math.random().toString(36).substring(2, 8);
+    const docSnap = await getDoc(doc(db, "rooms", uniqueId));
+    if (!docSnap.exists() && uniqueId !== "solaris-drift") {
+      idExists = false;
+    }
+  }
+
+  const userId = user.uid || `guest-${Date.now()}`;
+  const newListener = {
+    id: userId,
+    name: user.name,
+    avatarUrl: user.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuCuiYmL89VIWmay1zAOcQoTq8QGw980tcVWW3XmHLcaThUeBAjwtjBVn3zRynpuYkS0r3drGdS4iqPoo1EgCRPtE8-vH7N--o8up0B-NHY9MDWgarI6-nguFRxXcoF-UUyYPupvGFJO7ugI9Qr2PUJkgPOeRCL5MQJdkNWzqj1317kthel5aERuhct1J5CBVhN-Q7Q5zvwLwoOGeh0gBjvTNcNwk2dyMGnyzcx7xzM08AUL5Izd1E19659zyEgCUiVRfK9crKSlmU8",
+    isDj: true
+  };
+
+  const welcomeMsg = {
+    id: `msg-system-${Date.now()}`,
+    user: "SYSTEM",
+    text: `${user.name} created the room.`,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    isSystem: true
+  };
+
+  const initialRoom = {
+    roomId: uniqueId,
+    roomName: roomName.trim().toUpperCase(),
+    hostId: userId,
+    currentTrack: null,
+    isPlaying: false,
+    progressSecs: 0,
+    lastUpdated: Date.now(),
+    listeners: [newListener],
+    messages: [welcomeMsg],
+    vibe: 50,
+    passcode: passcode || ""
+  };
+
+  await setDoc(doc(db, "rooms", uniqueId), initialRoom);
+  return uniqueId;
+}
+
+// 3. Join a jam room
 export async function joinJamRoom(roomId: string, user: any, passcode: string | null, onUpdate: (room: any) => void) {
   const roomDocRef = doc(db, "rooms", roomId);
   const userId = user.uid || `guest-${Date.now()}`;
@@ -374,21 +502,34 @@ export async function joinJamRoom(roomId: string, user: any, passcode: string | 
   try {
     const roomSnap = await getDoc(roomDocRef);
     if (!roomSnap.exists()) {
-      // Create new room
-      const initialRoom = {
-        roomId,
-        roomName: `${user.name.toUpperCase()}'s STATION`,
-        hostId: userId,
-        currentTrack: null,
-        isPlaying: false,
-        progressSecs: 0,
-        lastUpdated: Date.now(),
-        listeners: [{ ...newListener, isDj: true }],
-        messages: [welcomeMsg],
-        vibe: 50,
-        passcode: passcode || ""
-      };
-      await setDoc(roomDocRef, initialRoom);
+      if (roomId === "solaris-drift") {
+        // Create default solaris-drift room
+        const initialRoom = {
+          roomId,
+          roomName: "SOLARIS DRIFT REC",
+          hostId: "STITCH_DJ",
+          currentTrack: {
+            id: "track-room",
+            title: "SOLARIS DRIFT",
+            artist: "MONO ECHO & THE CURATORS",
+            album: "SPACE SHIFT SELECTIONS",
+            duration: "04:45",
+            coverUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCmDcABelGW7FvSoaw5aZxCeVtTEFBRCv0dvPINsKgsPwVAZva5kjSwW-zx0Mgv-7a4i-q-r5lTxb6bEO3Y1jypc03Yk2kM3kG6Qqwxl9qBT1u8WZ3yZCC-bQWl2oDLuPBcpATGf1ZXIJ70ghbzEpGVbhFq9XTZ_yiwSYT6ZcNMsQYnw-ED8DbFc05uKgZ5AwWE01QzJYD2juCq69mytTavIYLReuE6OR3b1FOnTqK5r7u9ezncIH_0jsgTQqAsu04QP1um1NOMYJ4",
+            genre: "AMBIENT",
+            audioUrl: "https://aac.saavncdn.com/392/8ab72e5058ec1438fa910f135b5bb27d_160.mp4"
+          },
+          isPlaying: true,
+          progressSecs: 45,
+          lastUpdated: Date.now(),
+          listeners: [],
+          messages: [],
+          vibe: 85,
+          passcode: ""
+        };
+        await setDoc(roomDocRef, initialRoom);
+      } else {
+        throw new Error("Room not found");
+      }
     } else {
       const roomData = roomSnap.data();
       const currentListeners = roomData.listeners || [];
@@ -396,15 +537,24 @@ export async function joinJamRoom(roomId: string, user: any, passcode: string | 
 
       // Avoid duplicates
       if (!currentListeners.some((l: any) => l.id === userId)) {
+        if (roomData.hostId === userId) {
+          newListener.isDj = true;
+        }
         currentListeners.push(newListener);
+        currentMessages.push(welcomeMsg);
+        
+        await updateDoc(roomDocRef, {
+          listeners: currentListeners,
+          messages: currentMessages,
+          emptySince: null
+        });
+      } else {
+        if (roomData.emptySince) {
+          await updateDoc(roomDocRef, {
+            emptySince: null
+          });
+        }
       }
-      currentMessages.push(welcomeMsg);
-
-      await updateDoc(roomDocRef, {
-        listeners: currentListeners,
-        messages: currentMessages,
-        emptySince: null // reset grace period since a user is active
-      });
     }
 
     // Subscribe to updates
@@ -557,30 +707,4 @@ export async function verifyRoomCredentials(roomId: string, passcode: string) {
   }
 }
 
-// 8. Background Cleanup of Empty Rooms (Grace period of 1 minute)
-export async function cleanupEmptyRooms() {
-  try {
-    const roomsCol = collection(db, "rooms");
-    const querySnapshot = await getDocs(roomsCol);
-    const now = Date.now();
-    
-    querySnapshot.forEach(async (roomDoc) => {
-      if (roomDoc.id === "solaris-drift") return;
-      
-      const data = roomDoc.data();
-      const listeners = data.listeners || [];
-      
-      if (listeners.length === 0) {
-        const emptySince = data.emptySince;
-        if (emptySince && now - emptySince > 60000) {
-          await deleteDoc(doc(db, "rooms", roomDoc.id));
-          console.log(`[Jamroom Cleanup] Deleted inactive room: ${roomDoc.id}`);
-        } else if (!emptySince) {
-          await updateDoc(doc(db, "rooms", roomDoc.id), { emptySince: now });
-        }
-      }
-    });
-  } catch (err) {
-    console.warn("Error running jamroom cleanup:", err);
-  }
-}
+

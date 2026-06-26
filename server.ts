@@ -10,7 +10,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, deleteDoc, query, where, onSnapshot } from "firebase/firestore";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -441,6 +441,71 @@ io.on("connection", (socket) => {
     });
   });
 });
+
+// Active track of scheduled deletions to avoid duplicate timers
+const scheduledDeletions: Record<string, NodeJS.Timeout> = {};
+
+// Event-driven Firestore Room Cleanup
+function startFirestoreCleanupListener() {
+  try {
+    const roomsCol = collection(firestoreDb, "rooms");
+    const emptyRoomsQuery = query(roomsCol, where("emptySince", ">", 0));
+    
+    onSnapshot(emptyRoomsQuery, (snapshot) => {
+      const activeEmptyIds = new Set<string>();
+      
+      snapshot.forEach((roomDoc) => {
+        const roomId = roomDoc.id;
+        const data = roomDoc.data();
+        const emptySince = data.emptySince;
+        
+        activeEmptyIds.add(roomId);
+        
+        if (emptySince && !scheduledDeletions[roomId]) {
+          const now = Date.now();
+          const elapsed = now - emptySince;
+          const delay = Math.max(0, 60000 - elapsed);
+          
+          console.log(`[Firestore Cleanup] Room ${roomId} has been empty for ${Math.round(elapsed / 1000)}s. Scheduling deletion in ${Math.round(delay / 1000)}s.`);
+          
+          scheduledDeletions[roomId] = setTimeout(async () => {
+            try {
+              // Double check if still empty before deleting
+              const docSnap = await getDoc(doc(firestoreDb, "rooms", roomId));
+              if (docSnap.exists()) {
+                const docData = docSnap.data();
+                const listeners = docData.listeners || [];
+                if (listeners.length === 0 && docData.emptySince) {
+                  await deleteDoc(doc(firestoreDb, "rooms", roomId));
+                  console.log(`[Firestore Cleanup] Deleted inactive room: ${roomId}`);
+                }
+              }
+            } catch (err) {
+              console.error(`[Firestore Cleanup] Error deleting room ${roomId}:`, err);
+            }
+            delete scheduledDeletions[roomId];
+          }, delay);
+        }
+      });
+      
+      // Clean up any scheduled timeouts for rooms that are no longer empty (i.e. not in the snapshot anymore)
+      Object.keys(scheduledDeletions).forEach((roomId) => {
+        if (!activeEmptyIds.has(roomId)) {
+          console.log(`[Firestore Cleanup] Room ${roomId} is no longer empty. Cancelling scheduled deletion.`);
+          clearTimeout(scheduledDeletions[roomId]);
+          delete scheduledDeletions[roomId];
+        }
+      });
+    }, (err) => {
+      console.error("[Firestore Cleanup] onSnapshot listener error:", err);
+    });
+  } catch (err) {
+    console.error("[Firestore Cleanup] Error starting listener:", err);
+  }
+}
+
+// Start the listener
+startFirestoreCleanupListener();
 
 server.listen(PORT, () => {
   console.log(`Music2D Backend server running on port ${PORT}`);

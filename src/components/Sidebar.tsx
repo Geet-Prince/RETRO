@@ -11,7 +11,8 @@ import {
   Home,
   Sliders,
   Sparkles,
-  X
+  X,
+  ListMusic
 } from "lucide-react";
 
 interface SidebarProps {
@@ -86,6 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   { s: Screen.NOW_SPINNING, label: "NOW_SPINNING", icon: Disc },
                   { s: Screen.DISCOVER, label: "DISCOVER_MUSIC", icon: Compass },
                   { s: Screen.LIKED_MUSIC, label: "LIKED_COLLECTION", icon: Heart },
+                  { s: Screen.PLAYLIST, label: "PLAYLISTS", icon: ListMusic },
                   { s: Screen.JAM_TOGETHER, label: "JAM_TOGETHER", icon: Radio, badge: "LIVE" },
                   { s: Screen.PROFILE, label: "COLLECTOR_STATS", icon: User }
                 ].map((item) => {

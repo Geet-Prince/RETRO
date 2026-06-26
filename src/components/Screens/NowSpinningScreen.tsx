@@ -17,6 +17,8 @@ interface NowSpinningScreenProps {
   onToggleLike: (track: Track) => void;
   playlists: any[];
   onAddToQueue: (track: Track) => void;
+  onTriggerAddToPlaylist: (track: Track) => void;
+  onPlayPlaylist: (playlist: any) => void;
 }
 
 type Tab = "queue" | "liked" | "playlist" | "search";
@@ -34,12 +36,22 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   likedTracks,
   onToggleLike,
   playlists,
-  onAddToQueue
+  onAddToQueue,
+  onTriggerAddToPlaylist,
+  onPlayPlaylist
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>("queue");
   const [spinningSearchQuery, setSpinningSearchQuery] = useState("");
   const [spinningSearchResults, setSpinningSearchResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [expandedPlaylists, setExpandedPlaylists] = useState<Record<string, boolean>>({});
+
+  const togglePlaylistExpanded = (id: string) => {
+    setExpandedPlaylists((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<Track[]>([]);
@@ -284,12 +296,19 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                             <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{track.artist}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => onPlayTrack(track)}
                             className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
                           >
                             <Play className="w-3 h-3 text-primary" />
+                          </button>
+                          <button
+                            onClick={() => onTriggerAddToPlaylist(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            title="Add to playlist"
+                          >
+                            + PL
                           </button>
                           <button
                             onClick={() => removeFromQueue(idx)}
@@ -350,6 +369,13 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                           >
                             + Q
                           </button>
+                          <button
+                            onClick={() => onTriggerAddToPlaylist(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            title="Add to playlist"
+                          >
+                            + PL
+                          </button>
                         </div>
                       </div>
                     ))
@@ -377,19 +403,38 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                         key={pl.id}
                         className="p-2.5 rounded border border-border-tan bg-surface flex flex-col gap-2"
                       >
-                        <div className="flex items-center gap-2">
-                          <img 
-                            src={pl.coverUrl} 
-                            alt="Cover" 
-                            className="w-8 h-8 object-cover rounded border border-border-tan"
-                          />
-                          <div>
-                            <h4 className="text-xs font-black text-text-charcoal uppercase">{pl.name}</h4>
-                            <span className="text-[8px] text-gray-400 font-bold block">{pl.tracks?.length || 0} TRACKS</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={pl.coverUrl} 
+                              alt="Cover" 
+                              className="w-8 h-8 object-cover rounded border border-border-tan"
+                            />
+                            <div>
+                              <h4 className="text-xs font-black text-text-charcoal uppercase leading-none">{pl.name}</h4>
+                              <span className="text-[8px] text-gray-400 font-bold block mt-1">{pl.tracks?.length || 0} TRACKS</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {pl.tracks && pl.tracks.length > 0 && (
+                              <button
+                                onClick={() => onPlayPlaylist(pl)}
+                                className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                                title="Play Playlist"
+                              >
+                                <Play className="w-2.5 h-2.5 text-primary" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => togglePlaylistExpanded(pl.id)}
+                              className="bg-[#fff9ef] border border-border-tan px-2 py-0.5 rounded text-[8px] font-bold text-text-charcoal hover:bg-gray-100 cursor-pointer"
+                            >
+                              {expandedPlaylists[pl.id] ? "HIDE SONGS ▲" : "SHOW SONGS ▼"}
+                            </button>
                           </div>
                         </div>
-                        {pl.tracks && pl.tracks.length > 0 && (
-                          <div className="flex flex-col gap-1 border-t border-border-tan pt-1.5 mt-1">
+                        {expandedPlaylists[pl.id] && pl.tracks && pl.tracks.length > 0 && (
+                          <div className="flex flex-col gap-1 border-t border-border-tan pt-1.5 mt-1 animate-fadeIn">
                             {pl.tracks.map((track: Track) => (
                               <div key={track.id} className="flex justify-between items-center text-[9px] text-gray-600 font-bold py-0.5 hover:text-primary cursor-pointer" onClick={() => onPlayTrack(track)}>
                                 <span className="truncate max-w-[180px]">{track.title} - {track.artist}</span>
@@ -448,6 +493,13 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                             title="Add to queue"
                           >
                             + Q
+                          </button>
+                          <button
+                            onClick={() => onTriggerAddToPlaylist(track)}
+                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            title="Add to playlist"
+                          >
+                            + PL
                           </button>
                         </div>
                       </div>
