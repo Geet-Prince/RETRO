@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Track } from "../types";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Heart, Music, Sparkles } from "lucide-react";
+import { seekAudio, getAudioCurrentTime } from "../utils/audio";
 
 interface TurntableProps {
   currentTrack: Track;
@@ -30,24 +31,18 @@ export const Turntable: React.FC<TurntableProps> = ({
   const durationParts = (currentTrack?.duration || "00:00").split(":");
   const totalSecs = (parseInt(durationParts[0], 10) || 0) * 60 + (parseInt(durationParts[1], 10) || 0);
 
-  // Auto-advance timeline if playing
+  // Sync progress tracker with active playback (both live streams and synth frequency beeps)
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-    if (isPlaying) {
-      timer = setInterval(() => {
-        setProgressSecs((prev) => {
-          if (prev >= totalSecs) {
-            onNext();
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
+    const updateProgress = () => {
+      setProgressSecs(Math.floor(getAudioCurrentTime()));
     };
-  }, [isPlaying, totalSecs, onNext]);
+    updateProgress();
+    // Poll every 100ms for high responsiveness (seeking when paused aligns instantly)
+    const timer = setInterval(updateProgress, 100);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [currentTrack]);
 
   // Reset progress when track changes
   useEffect(() => {
@@ -67,7 +62,9 @@ export const Turntable: React.FC<TurntableProps> = ({
     const width = rect.width;
     const percentage = clickX / width;
     const targetSecs = Math.floor(percentage * totalSecs);
-    setProgressSecs(Math.max(0, Math.min(targetSecs, totalSecs)));
+    const boundedSecs = Math.max(0, Math.min(targetSecs, totalSecs));
+    setProgressSecs(boundedSecs);
+    seekAudio(boundedSecs); // Seek actual audio stream so all components stay synced
   };
 
   // Arm rotation angle: when playing, pivot arm onto the vinyl disk's edge (24 degrees), otherwise parked at 0 degrees

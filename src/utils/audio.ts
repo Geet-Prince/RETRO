@@ -7,6 +7,11 @@ let analyser: AnalyserNode | null = null;
 let htmlAudio: HTMLAudioElement | null = null;
 let onAudioEndedCallback: (() => void) | null = null;
 
+// Global playhead tracking for synth tones
+let synthPlayhead = 0;
+let synthPlayheadInterval: NodeJS.Timeout | null = null;
+let lastSource: string | undefined = undefined;
+
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -81,6 +86,12 @@ export function getAnalyserData() {
 
 export function playAudioStream(url: string, onEnded?: () => void) {
   try {
+    const isResuming = (url === lastSource);
+    lastSource = url;
+    if (!isResuming) {
+      synthPlayhead = 0;
+    }
+
     stopSynthTone();
     
     // Check if we are just resuming the same track
@@ -127,10 +138,14 @@ export function seekAudio(seconds: number) {
   if (htmlAudio && isFinite(seconds)) {
     htmlAudio.currentTime = seconds;
   }
+  synthPlayhead = seconds;
 }
 
 export function getAudioCurrentTime(): number {
-  return htmlAudio ? htmlAudio.currentTime : 0;
+  if (htmlAudio && htmlAudio.src && (htmlAudio.src.startsWith("http://") || htmlAudio.src.startsWith("https://"))) {
+    return htmlAudio.currentTime;
+  }
+  return synthPlayhead;
 }
 
 export function playSynthTone(frequencyStr: string | undefined, onEnded?: () => void) {
@@ -147,8 +162,20 @@ export function playSynthTone(frequencyStr: string | undefined, onEnded?: () => 
     initAudio();
     if (!audioCtx) return;
 
+    // Reset or keep playhead
+    const isResuming = (frequencyStr === lastSource);
+    lastSource = frequencyStr;
+    if (!isResuming) {
+      synthPlayhead = 0;
+    }
+
     // Stop existing oscillator first
     stopSynthTone();
+
+    // Start synth playhead tracking interval
+    synthPlayheadInterval = setInterval(() => {
+      synthPlayhead += 1;
+    }, 1000);
 
     const freq = parseFloat(frequencyStr || "220");
     oscillator = audioCtx.createOscillator();
@@ -208,6 +235,10 @@ export function stopSynthTone() {
       }, 150);
     }
   } catch (e) {}
+  if (synthPlayheadInterval) {
+    clearInterval(synthPlayheadInterval);
+    synthPlayheadInterval = null;
+  }
   oscillator = null;
   gainNode = null;
 }

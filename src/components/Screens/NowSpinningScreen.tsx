@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Track } from "../../types";
 import { Turntable } from "../Turntable";
 import { Sparkles, ListMusic, Heart, Music, Search, Plus, Play, Trash2 } from "lucide-react";
@@ -41,10 +41,74 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   const [spinningSearchResults, setSpinningSearchResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Suggestions state
+  const [suggestions, setSuggestions] = useState<Track[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Suggestions Click-away handler
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  // Debounced search suggestions fetch
+  useEffect(() => {
+    if (!spinningSearchQuery.trim() || spinningSearchQuery.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const response = await fetch(`https://jiosavnapi-production.up.railway.app/api/search/songs?query=${encodeURIComponent(spinningSearchQuery.trim())}&limit=5`);
+        const resData = await response.json();
+        if (resData.success && resData.data && resData.data.results) {
+          const mapped = resData.data.results.map((song: any) => {
+            const downloadObj = song.downloadUrl.find((d: any) => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1];
+            const imageObj = song.image.find((i: any) => i.quality === "500x500") || song.image[song.image.length - 1];
+            const durationSec = song.duration || 0;
+            const mins = Math.floor(durationSec / 60);
+            const secs = durationSec % 60;
+            const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            return {
+              id: song.id,
+              title: song.name,
+              artist: song.artists.primary.map((a: any) => a.name).join(", ") || "Unknown Artist",
+              album: song.album.name || "Unknown Album",
+              duration: durationStr,
+              coverUrl: imageObj ? imageObj.url : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17",
+              genre: song.language ? song.language.toUpperCase() : "UNKNOWN",
+              listeners: song.playCount ? `${(song.playCount / 1000000).toFixed(1)}M` : "100K",
+              audioUrl: downloadObj ? downloadObj.url : ""
+            };
+          });
+          setSuggestions(mapped);
+          setShowSuggestions(true);
+        } else {
+          setSuggestions([]);
+        }
+      } catch (err) {
+        console.error("Error fetching search suggestions:", err);
+        setSuggestions([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [spinningSearchQuery]);
+
   const handleLocalSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!spinningSearchQuery.trim()) return;
 
+    setActiveTab("search");
     setIsSearching(true);
     try {
       const response = await fetch(`https://jiosavnapi-production.up.railway.app/api/search/songs?query=${encodeURIComponent(spinningSearchQuery.trim())}`);
@@ -85,14 +149,70 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   return (
     <div className="flex-1 flex flex-col gap-6 p-4 md:p-6 font-mono overflow-y-auto scrollbar-hide h-full">
       {/* Top Header details */}
-      <div className="flex items-center justify-between border-b border-border-tan pb-3">
-        <div>
-          <span className="text-[10px] text-primary font-bold tracking-widest block">DECK_OUT_V_02</span>
-          <h2 className="text-sm md:text-lg font-bold text-text-charcoal flex items-center gap-2">
-            NOW SPINNING <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-          </h2>
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border-tan pb-3 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+          <div>
+            <span className="text-[10px] text-primary font-bold tracking-widest block">DECK_OUT_V_02</span>
+            <h2 className="text-sm md:text-lg font-bold text-text-charcoal flex items-center gap-2">
+              NOW SPINNING <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+            </h2>
+          </div>
+
+          {/* Convenient Search Bar next to heading */}
+          <div ref={searchContainerRef} className="relative max-w-xs w-full flex-grow">
+            <form onSubmit={handleLocalSearchSubmit} className="relative w-full">
+              <input 
+                type="text" 
+                placeholder="Search songs to queue..." 
+                value={spinningSearchQuery}
+                onChange={(e) => setSpinningSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (suggestions.length > 0) setShowSuggestions(true);
+                }}
+                className="w-full bg-surface border border-border-tan py-1.5 pl-8 pr-16 rounded text-[11px] text-text-charcoal focus:outline-none focus:border-primary font-bold"
+              />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <button 
+                type="submit"
+                className="absolute right-1 top-1/2 -translate-y-1/2 bg-primary text-white text-[8px] font-black px-2 py-1 rounded hover:bg-opacity-90 cursor-pointer"
+              >
+                SEARCH
+              </button>
+            </form>
+
+            {/* Suggestions Autocomplete Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-[100] mt-1.5 bg-[#FAF3E0] border-2 border-[#1A1A1A] rounded brutalist-shadow-thick max-h-60 overflow-y-auto font-mono text-text-charcoal flex flex-col animate-fadeIn">
+                <div className="text-[8px] text-gray-500 font-bold border-b border-border-tan px-2 py-1 bg-surface-container">
+                  QUICK SUGGESTIONS (CLICK TO PLAY)
+                </div>
+                {suggestions.map((track) => (
+                  <div
+                    key={track.id}
+                    onClick={() => {
+                      onPlayTrack(track);
+                      setShowSuggestions(false);
+                      setSpinningSearchQuery("");
+                    }}
+                    className="flex items-center gap-2 p-2 hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer border-b border-border-tan last:border-b-0 text-[10px]"
+                  >
+                    <img 
+                      src={track.coverUrl} 
+                      alt="Cover" 
+                      className="w-7 h-7 object-cover rounded border border-border-tan"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold truncate">{track.title}</div>
+                      <div className="text-[8px] text-gray-400 truncate">{track.artist}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="text-right text-[9px] md:text-[10px] text-gray-500 font-bold">
+
+        <div className="text-right text-[9px] md:text-[10px] text-gray-500 font-bold flex flex-row md:flex-col justify-between md:justify-start items-center md:items-end gap-1.5">
           <span className="hidden sm:inline">ACTIVE SOURCE: INTERNAL_OSC</span>
           <span className="block text-primary">STATUS: {isPlaying ? "SPINNING" : "STOPPED"}</span>
         </div>
@@ -287,33 +407,15 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
 
             {activeTab === "search" && (
               <div className="flex-grow flex flex-col gap-3 h-full">
-                {/* Local search bar */}
-                <form onSubmit={handleLocalSearchSubmit} className="relative w-full">
-                  <input 
-                    type="text" 
-                    placeholder="Search songs to queue..." 
-                    value={spinningSearchQuery}
-                    onChange={(e) => setSpinningSearchQuery(e.target.value)}
-                    className="w-full bg-surface border border-border-tan py-1.5 pl-8 pr-16 rounded text-[11px] text-text-charcoal focus:outline-none focus:border-primary font-bold"
-                  />
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <button 
-                    type="submit"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-primary text-white text-[8px] font-black px-2 py-1 rounded hover:bg-opacity-90 cursor-pointer"
-                  >
-                    SEARCH
-                  </button>
-                </form>
-
                 {/* Local search results list */}
-                <div className="flex-1 overflow-y-auto max-h-[280px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
                   {isSearching ? (
                     <div className="text-center py-12 text-[10px] text-gray-400 animate-pulse">
                       Searching music archive...
                     </div>
                   ) : spinningSearchResults.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400 text-[10px]">
-                      {spinningSearchQuery.trim() ? "No matching records found" : "Enter a search term above"}
+                    <div className="text-center py-12 text-gray-400 text-[10px] border border-dashed border-border-tan rounded p-4 bg-surface">
+                      {spinningSearchQuery.trim() ? "No matching records found" : "Enter a search term in the search bar next to the header"}
                     </div>
                   ) : (
                     spinningSearchResults.map((track) => (

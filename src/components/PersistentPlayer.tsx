@@ -108,61 +108,79 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
   const durationParts = (currentTrack?.duration || "00:00").split(":");
   const totalSecs = (parseInt(durationParts[0], 10) || 0) * 60 + (parseInt(durationParts[1], 10) || 0);
 
+  // WaveSurfer.js-like visualizer state and refs
+  const [peaks, setPeaks] = useState<number[]>([]);
+  const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  
+  const progressSecsRef = useRef(progressSecs);
+  const totalSecsRef = useRef(totalSecs);
+  const peaksRef = useRef(peaks);
+
+  useEffect(() => {
+    progressSecsRef.current = progressSecs;
+  }, [progressSecs]);
+
+  useEffect(() => {
+    totalSecsRef.current = totalSecs;
+  }, [totalSecs]);
+
+  useEffect(() => {
+    peaksRef.current = peaks;
+  }, [peaks]);
+
   // Sync volume with audio engine
   useEffect(() => {
     setAudioVolume(isMuted ? 0 : volume / 100);
   }, [volume, isMuted]);
 
-  // Timer simulation and stream synchronization
+  // Timer simulation and playhead synchronization
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        if (currentTrack.audioUrl && (currentTrack.audioUrl.startsWith("http://") || currentTrack.audioUrl.startsWith("https://"))) {
-          const current = Math.floor(getAudioCurrentTime());
-          setProgressSecs(current);
-          if (current >= totalSecs && totalSecs > 0) {
-            if (isRepeat) {
-              seekAudio(0);
-            } else {
-              onNext();
-            }
-          }
+    const updateProgress = () => {
+      const current = Math.floor(getAudioCurrentTime());
+      setProgressSecs(current);
+      if (isPlaying && current >= totalSecs && totalSecs > 0) {
+        if (isRepeat) {
+          seekAudio(0);
+          setProgressSecs(0);
         } else {
-          setProgressSecs((prev) => {
-            if (prev >= totalSecs) {
-              if (isRepeat) {
-                return 0; // restart
-              } else {
-                onNext(); // autoplay next
-                return 0;
-              }
-            }
-            return prev + 1;
-          });
+          onNext();
         }
-      }, 250);
-    }
+      }
+    };
+
+    updateProgress();
+    // Poll every 100ms for high responsiveness (seeking when paused aligns instantly)
+    const interval = setInterval(updateProgress, 100);
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(interval);
     };
   }, [isPlaying, totalSecs, isRepeat, onNext, currentTrack]);
 
-  // Reset progress when track changes
+  // Reset progress when track changes and generate deterministic WaveSurfer-style peaks
   useEffect(() => {
     setProgressSecs(0);
+
+    // Generate 120 deterministic peak values (between 0.15 and 0.85) based on track ID
+    const trackId = currentTrack?.id || "default";
+    let hash = 0;
+    for (let i = 0; i < trackId.length; i++) {
+      hash = trackId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const newPeaks: number[] = [];
+    for (let i = 0; i < 120; i++) {
+      const seed = Math.sin(hash + i * 18.543) * 9999;
+      const val = seed - Math.floor(seed);
+      // Nice bell curve shape
+      const centerFactor = Math.sin((i / 120) * Math.PI);
+      const peak = 0.15 + val * 0.70 * centerFactor;
+      newPeaks.push(peak);
+    }
+    setPeaks(newPeaks);
   }, [currentTrack]);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Generative art visualizer setup
+  // WaveSurfer-style visualizer rendering loop
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
     let animationFrameId: number;
     let time = 0;
     let lastTime = performance.now();
@@ -171,22 +189,6 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
     let smoothBass = 0.05;
     let smoothMid = 0.03;
     let smoothTreble = 0.02;
-
-    // Cache sizing to prevent reflows/layout thrashing at 60fps
-    let cachedWidth = canvas.clientWidth;
-    let cachedHeight = canvas.clientHeight;
-
-    const handleResize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      cachedWidth = canvas.clientWidth;
-      cachedHeight = canvas.clientHeight;
-      canvas.width = cachedWidth * dpr;
-      canvas.height = cachedHeight * dpr;
-      ctx.scale(dpr, dpr);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
 
     const render = (now: number) => {
       const deltaTime = Math.min((now - lastTime) / 1000, 0.1);
@@ -205,75 +207,66 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       const speedFactor = 0.35 + smoothBass * 1.4 + smoothMid * 0.7;
       time += deltaTime * speedFactor;
 
-      // Clear Canvas to baseline black
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, cachedWidth, cachedHeight);
-
-      // Light additive alpha blending for glowing waves
-      ctx.globalCompositeOperation = "source-over";
-
-      // 4 custom transparent responsive waves (thin amplitude, no fills)
-      const waves = [
-        {
-          freq: 2,
-          speed: 1.2,
-          amp: 2 + smoothBass * 18, // increased amplitude for visible beat sync
-          color: "rgba(156, 63, 0, ", // primary orange
-          opacity: 0.35, // higher opacity for visibility
-          lineWidth: 1.5,
-          phaseShift: time
-        },
-        {
-          freq: 3.5,
-          speed: -1.5,
-          amp: 1.5 + smoothMid * 12,
-          color: "rgba(200, 184, 154, ", // tan
-          opacity: 0.25,
-          lineWidth: 1.0,
-          phaseShift: -time * 1.3
-        },
-        {
-          freq: 5,
-          speed: 2.2,
-          amp: 1 + smoothTreble * 8,
-          color: "rgba(156, 63, 0, ", // primary orange
-          opacity: 0.20,
-          lineWidth: 1.0,
-          phaseShift: time * 1.8
-        },
-        {
-          freq: 1.5,
-          speed: -0.8,
-          amp: 1.5 + (smoothBass * 0.5 + smoothMid * 0.5) * 15,
-          color: "rgba(200, 184, 154, ", // tan
-          opacity: 0.18,
-          lineWidth: 1.2,
-          phaseShift: -time * 0.7
-        }
-      ];
-
-      waves.forEach((w) => {
-        ctx.beginPath();
-        const centerY = cachedHeight / 2;
-
-        for (let x = 0; x <= cachedWidth; x += 4) {
-          const progress = x / cachedWidth;
-          const envelope = Math.sin(progress * Math.PI); // smooth zero at edges
+      // Draw WaveSurfer-style Reactive Waveform Canvas
+      const waveCanvas = waveformCanvasRef.current;
+      if (waveCanvas) {
+        const wCtx = waveCanvas.getContext("2d");
+        if (wCtx) {
+          const cssWidth = waveCanvas.clientWidth;
+          const cssHeight = waveCanvas.clientHeight;
+          const dpr = window.devicePixelRatio || 1;
           
-          const y = centerY + Math.sin(progress * Math.PI * w.freq + w.phaseShift) * w.amp * envelope;
-          
-          if (x === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
+          const targetWidth = Math.round(cssWidth * dpr);
+          const targetHeight = Math.round(cssHeight * dpr);
+          if (waveCanvas.width !== targetWidth || waveCanvas.height !== targetHeight) {
+            waveCanvas.width = targetWidth;
+            waveCanvas.height = targetHeight;
           }
+          
+          wCtx.save();
+          wCtx.scale(dpr, dpr);
+          wCtx.clearRect(0, 0, cssWidth, cssHeight);
+          
+          const currentPeaks = peaksRef.current;
+          const barCount = currentPeaks.length || 120;
+          const gap = 2;
+          const barWidth = (cssWidth - (barCount - 1) * gap) / barCount;
+          const centerY = cssHeight / 2;
+          
+          // Beat scale multiplier: reacts dynamically to kicks/bass
+          const beatScale = 1.0 + smoothBass * 0.95;
+          const progress = totalSecsRef.current > 0 ? (progressSecsRef.current / totalSecsRef.current) : 0;
+          const activeThreshold = progress * barCount;
+          
+          for (let i = 0; i < barCount; i++) {
+            const peak = currentPeaks[i] || 0.5;
+            
+            // Add custom dynamic vibration based on real-time audio frequencies
+            const kickReaction = smoothBass * 8 * Math.sin(time * 12 + i * 0.15);
+            const midReaction = smoothMid * 4 * Math.cos(time * 8 + i * 0.1);
+            
+            let h = peak * (cssHeight - 6) * beatScale + kickReaction + midReaction;
+            h = Math.max(3, Math.min(cssHeight - 2, h)); // ensure height stays within bounds
+            
+            const x = i * (barWidth + gap);
+            const y = centerY - h / 2;
+            
+            // Decide color: active (brand orange) or inactive (dark gray)
+            const isActive = i <= activeThreshold;
+            wCtx.fillStyle = isActive ? "#9c3f00" : "#444444";
+            
+            wCtx.beginPath();
+            if (wCtx.roundRect) {
+              wCtx.roundRect(x, y, barWidth, h, barWidth / 2);
+            } else {
+              wCtx.rect(x, y, barWidth, h);
+            }
+            wCtx.fill();
+          }
+          
+          wCtx.restore();
         }
-
-        // Draw Stroke (thin, elegant lines)
-        ctx.strokeStyle = `${w.color}${w.opacity})`;
-        ctx.lineWidth = w.lineWidth;
-        ctx.stroke();
-      });
+      }
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -281,7 +274,6 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
     animationFrameId = requestAnimationFrame(render);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -353,11 +345,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
         />
       </div>
 
-      {/* Responsive Beat-Synced Audio Wave Visualizer */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full z-0 pointer-events-none"
-      />
+
 
       {/* Track info panel */}
       <div className="relative z-10 flex items-center gap-2 md:gap-3 flex-1 md:w-72 min-w-0">
@@ -383,16 +371,9 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       </div>
 
       {/* Playback Controls & Progress Bar (Desktop only) */}
-      <div className="relative z-10 hidden md:flex flex-1 max-w-xl flex-col items-center gap-1.5 mx-4">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={toggleShuffle}
-            className={`p-1 hover:text-primary transition-colors cursor-pointer ${isShuffle ? "text-primary" : "text-gray-400"}`}
-            title="Toggle Shuffle"
-          >
-            <Shuffle className="w-3.5 h-3.5" />
-          </button>
-
+      <div className="relative z-10 hidden md:flex flex-1 max-w-2xl items-center gap-4 mx-4">
+        {/* Left Controls: Prev, Play, Next */}
+        <div className="flex items-center gap-3">
           <button 
             onClick={onPrev}
             className="p-1 hover:text-[#fff9ef] text-gray-400 transition-colors cursor-pointer"
@@ -415,6 +396,37 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
           >
             <SkipForward className="w-4 h-4" />
           </button>
+        </div>
+
+        {/* Center: Waveform Timeline */}
+        <div className="flex-1 flex items-center gap-3">
+          <span className="text-[9px] text-gray-400 font-bold w-10 text-right">{formatTime(progressSecs)}</span>
+          
+          <div 
+            onClick={handleTimelineClick}
+            className="flex-1 relative h-9 flex items-center cursor-pointer bg-[#0c0c0c] border border-gray-900 rounded px-2"
+            title="Jump to position"
+          >
+            <div className="relative w-full h-full overflow-hidden">
+              <canvas 
+                ref={waveformCanvasRef}
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+          </div>
+
+          <span className="text-[9px] text-gray-400 font-bold w-10 text-left">{currentTrack.duration}</span>
+        </div>
+
+        {/* Right Controls: Shuffle, Repeat */}
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={toggleShuffle}
+            className={`p-1 hover:text-primary transition-colors cursor-pointer ${isShuffle ? "text-primary" : "text-gray-400"}`}
+            title="Toggle Shuffle"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+          </button>
 
           <button 
             onClick={toggleRepeat}
@@ -423,28 +435,6 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
           >
             <Repeat className="w-3.5 h-3.5" />
           </button>
-        </div>
-
-        {/* Timeline Progress */}
-        <div className="w-full flex items-center gap-3">
-          <span className="text-[9px] text-gray-400 font-bold w-10 text-right">{formatTime(progressSecs)}</span>
-          
-          <div 
-            onClick={handleTimelineClick}
-            className="flex-1 relative h-1.5 bg-gray-800 border border-gray-700 rounded-sm flex items-center cursor-pointer"
-          >
-            <div 
-              className="h-full bg-primary"
-              style={{ width: `${(progressSecs / totalSecs) * 100}%` }}
-            />
-            {/* Slider knob */}
-            <div 
-              className="absolute w-3.5 h-3.5 rounded-full bg-[#fff9ef] border border-border-tan shadow -ml-1.5 cursor-grab"
-              style={{ left: `${(progressSecs / totalSecs) * 100}%` }}
-            />
-          </div>
-
-          <span className="text-[9px] text-gray-400 font-bold w-10 text-left">{currentTrack.duration}</span>
         </div>
       </div>
 
