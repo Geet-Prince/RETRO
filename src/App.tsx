@@ -34,7 +34,17 @@ export default function App() {
   const [trendingTracks, setTrendingTracks] = useState<Track[]>(MOCK_TRACKS);
 
   // Master Playback State
-  const [currentTrack, setCurrentTrack] = useState<Track>(MOCK_TRACKS[0]);
+  const [currentTrack, setCurrentTrack] = useState<Track>(() => {
+    const saved = localStorage.getItem("retro_last_track");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn("Failed to parse last saved track", e);
+      }
+    }
+    return MOCK_TRACKS[0];
+  });
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [likedTrackIds, setLikedTrackIds] = useState<string[]>([]);
   const [likedTracks, setLikedTracks] = useState<Track[]>([]);
@@ -83,7 +93,8 @@ export default function App() {
             };
           });
           setTrendingTracks(mapped);
-          if (mapped.length > 0) {
+          const savedLastTrackStr = localStorage.getItem("retro_last_track");
+          if (!savedLastTrackStr && mapped.length > 0) {
             setCurrentTrack(mapped[0]);
           }
         }
@@ -148,6 +159,9 @@ export default function App() {
 
   useEffect(() => {
     currentTrackRef.current = currentTrack;
+    if (currentTrack) {
+      localStorage.setItem("retro_last_track", JSON.stringify(currentTrack));
+    }
   }, [currentTrack]);
 
   useEffect(() => {
@@ -239,6 +253,25 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Restore User Session on mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem("retro_user_session");
+    if (savedSession) {
+      try {
+        const userData = JSON.parse(savedSession);
+        setUser(userData.profile);
+        setLikedTrackIds(userData.likedTrackIds || []);
+        setLikedTracks(userData.likedTracks || []);
+        setRecentlyPlayed(userData.recentlyPlayed || []);
+        setPlaylists(userData.playlists || []);
+        setFriends(userData.friends || []);
+        setScreen(Screen.NOW_SPINNING);
+      } catch (e) {
+        console.warn("Failed to restore user session", e);
+      }
+    }
+  }, []);
+
   // Authentication Guard: if not logged in, restrict to LANDING/LOGIN/REGISTER
   useEffect(() => {
     if (!user) {
@@ -256,6 +289,10 @@ export default function App() {
     setRecentlyPlayed(userData.recentlyPlayed || []);
     setPlaylists(userData.playlists || []);
     setFriends(userData.friends || []);
+    if (userData.recentlyPlayed && userData.recentlyPlayed.length > 0) {
+      setCurrentTrack(userData.recentlyPlayed[0]);
+    }
+    localStorage.setItem("retro_user_session", JSON.stringify(userData));
     setScreen(Screen.NOW_SPINNING);
   };
 
@@ -266,6 +303,10 @@ export default function App() {
     setRecentlyPlayed(userData.recentlyPlayed || []);
     setPlaylists(userData.playlists || []);
     setFriends(userData.friends || []);
+    if (userData.recentlyPlayed && userData.recentlyPlayed.length > 0) {
+      setCurrentTrack(userData.recentlyPlayed[0]);
+    }
+    localStorage.setItem("retro_user_session", JSON.stringify(userData));
     setScreen(Screen.NOW_SPINNING);
   };
 
@@ -284,6 +325,7 @@ export default function App() {
     setScreen(Screen.LANDING);
     stopSynthTone();
     setIsPlaying(false);
+    localStorage.removeItem("retro_user_session");
   };
 
   // Playback Control Handlers
@@ -300,6 +342,16 @@ export default function App() {
       try {
         const list = await addRecentlyPlayed(user.uid, track);
         setRecentlyPlayed(list);
+        
+        // Sync locally cached user session
+        const savedSession = localStorage.getItem("retro_user_session");
+        if (savedSession) {
+          try {
+            const userData = JSON.parse(savedSession);
+            userData.recentlyPlayed = list;
+            localStorage.setItem("retro_user_session", JSON.stringify(userData));
+          } catch (err) {}
+        }
       } catch (e) {
         console.error("Error saving recently played", e);
       }
@@ -382,6 +434,17 @@ export default function App() {
         const result = await toggleLikeTrack(user.uid, track);
         setLikedTrackIds(result.likedTrackIds);
         setLikedTracks(result.likedTracks);
+        
+        // Sync locally cached user session
+        const savedSession = localStorage.getItem("retro_user_session");
+        if (savedSession) {
+          try {
+            const userData = JSON.parse(savedSession);
+            userData.likedTrackIds = result.likedTrackIds;
+            userData.likedTracks = result.likedTracks;
+            localStorage.setItem("retro_user_session", JSON.stringify(userData));
+          } catch (err) {}
+        }
       } catch (e) {
         console.error("Error saving like", e);
       }

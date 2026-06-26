@@ -205,66 +205,59 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       const speedFactor = 0.35 + smoothBass * 1.4 + smoothMid * 0.7;
       time += deltaTime * speedFactor;
 
-      // Clear Canvas to baseline #151515
-      ctx.fillStyle = "#151515";
+      // Clear Canvas to baseline black
+      ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, cachedWidth, cachedHeight);
 
-      // Light additive alpha blending for topographic glow effect
-      ctx.globalCompositeOperation = "lighter";
+      // Light additive alpha blending for glowing waves
+      ctx.globalCompositeOperation = "source-over";
 
-      const N = 80; // 80 horizontal lines (premium generative grid)
-      const spacing = cachedHeight / (N + 1);
+      // 4 custom transparent responsive waves (thin amplitude, no fills)
+      const waves = [
+        {
+          freq: 2,
+          speed: 1.2,
+          amp: 2 + smoothBass * 6,
+          color: "rgba(156, 63, 0, ", // primary orange
+          opacity: 0.12,
+          phaseShift: time
+        },
+        {
+          freq: 3.5,
+          speed: -1.5,
+          amp: 1.5 + smoothMid * 4,
+          color: "rgba(200, 184, 154, ", // tan
+          opacity: 0.08,
+          phaseShift: -time * 1.3
+        },
+        {
+          freq: 5,
+          speed: 2.2,
+          amp: 1 + smoothTreble * 3,
+          color: "rgba(156, 63, 0, ", // primary orange
+          opacity: 0.06,
+          phaseShift: time * 1.8
+        },
+        {
+          freq: 1.5,
+          speed: -0.8,
+          amp: 1.5 + (smoothBass * 0.5 + smoothMid * 0.5) * 4,
+          color: "rgba(200, 184, 154, ", // tan
+          opacity: 0.05,
+          phaseShift: -time * 0.7
+        }
+      ];
 
-      for (let i = 0; i < N; i++) {
-        const baseY = (i + 1) * spacing;
-        const centerDist = Math.abs(i - (N - 1) / 2) / ((N - 1) / 2);
-        
-        // Depth Fade: center lines are stronger, outer lines dissolve smoothly
-        const opacityMult = Math.pow(Math.cos(centerDist * Math.PI / 2), 1.5);
-
-        // Curated white opacities
-        const baseAlphas = [0.08, 0.15, 0.22];
-        const baseAlpha = baseAlphas[i % 3];
-
-        // Highlight beat responsiveness (strong bass slightly brightens lines)
-        let alpha = baseAlpha * opacityMult;
-        alpha += smoothBass * 0.10 * opacityMult;
-        alpha = Math.max(0, Math.min(1, alpha));
-
-        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.lineWidth = 0.75;
-
+      waves.forEach((w) => {
         ctx.beginPath();
+        const centerY = cachedHeight / 2;
 
-        // Edge containment: flatten lines as they approach top/bottom boundaries
-        const dispMult = Math.cos(centerDist * Math.PI / 2);
-
-        // Amplitudes map directly to audio bands
-        const bassAmp = (0.04 + smoothBass * 0.96) * 15.0 * dispMult;
-        const midAmp = (0.015 + smoothMid * 0.985) * 7.5 * dispMult;
-        const trebleAmp = (0.003 + smoothTreble * 0.997) * 2.2 * dispMult;
-
-        // Curvature/complexity scale based on mids and highs
-        const curvatureScale = 1.0 + (smoothMid + smoothTreble) * 0.7;
-
-        const step = 10;
-        for (let x = 0; x <= cachedWidth; x += step) {
-          // Large slow hills (using 2D Perlin noise)
-          const bassNoiseX = x * 0.0012 * curvatureScale + time * 0.12 + i * 0.015;
-          const bassNoiseY = i * 0.04 + time * 0.03;
-          const bassVal = perlin2D(bassNoiseX, bassNoiseY);
-
-          // Medium ripples (sine/cosine math)
-          const midVal = Math.sin(x * 0.006 * curvatureScale + time * 0.45 + i * 0.12) * 
-                         Math.cos(x * 0.0028 + time * 0.22 + i * 0.06);
-
-          // Tiny detailed oscillations (treble)
-          const trebleVal = Math.sin(x * 0.024 * curvatureScale + time * 1.1 + i * 0.25) * 
-                            Math.cos(x * 0.012 + time * 0.55 + i * 0.12);
-
-          const dy = (bassVal * bassAmp) + (midVal * midAmp) + (trebleVal * trebleAmp);
-          const y = baseY + dy;
-
+        for (let x = 0; x <= cachedWidth; x += 4) {
+          const progress = x / cachedWidth;
+          const envelope = Math.sin(progress * Math.PI); // smooth zero at edges
+          
+          const y = centerY + Math.sin(progress * Math.PI * w.freq + w.phaseShift) * w.amp * envelope;
+          
           if (x === 0) {
             ctx.moveTo(x, y);
           } else {
@@ -272,8 +265,11 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
           }
         }
 
+        // Draw Stroke (thin, elegant lines)
+        ctx.strokeStyle = `${w.color}${w.opacity})`;
+        ctx.lineWidth = 1.0;
         ctx.stroke();
-      }
+      });
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -344,7 +340,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
   ];
 
   return (
-    <div className="w-full bg-[#151515] text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden">
+    <div className="w-full bg-black text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden">
       {/* Top absolute progress bar for mobile */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800 md:hidden z-20">
         <div 
@@ -353,7 +349,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
         />
       </div>
 
-      {/* Generative Art Topographic Line Wave Visualizer */}
+      {/* Responsive Beat-Synced Audio Wave Visualizer */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full z-0 pointer-events-none"
