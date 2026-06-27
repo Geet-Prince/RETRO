@@ -15,6 +15,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { seekAudio, setAudioVolume, getAudioCurrentTime, getAnalyserData } from "../utils/audio";
+import { saavnImg } from "../utils/image";
 
 // 2D Perlin Noise implementation for organic topographic wave rendering
 const PERMUTATION = new Uint8Array([
@@ -366,7 +367,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
       <div className="relative z-10 flex items-center gap-2 md:gap-3 flex-1 md:w-72 min-w-0">
         <div className="relative group w-10 h-10 md:w-12 md:h-12 rounded border border-border-tan overflow-hidden flex-shrink-0">
           <img 
-            src={currentTrack.coverUrl} 
+            src={saavnImg(currentTrack.coverUrl, 150)} 
             alt="Track Cover" 
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover"
@@ -502,6 +503,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
           <div className="relative w-20 h-1 bg-gray-800 rounded flex items-center">
             <input 
               type="range"
+              aria-label="Volume"
               min="0"
               max="100"
               value={isMuted ? 0 : volume}
@@ -587,7 +589,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
                     className="flex items-center gap-2 p-1.5 border border-border-tan hover:bg-surface-container rounded transition-colors"
                   >
                     <img 
-                      src={track.coverUrl} 
+                      src={saavnImg(track.coverUrl, 50)} 
                       alt="Cover" 
                       referrerPolicy="no-referrer"
                       className="w-8 h-8 object-cover rounded-sm border border-border-tan flex-shrink-0"
@@ -624,7 +626,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
                     className="flex items-center gap-2 p-1.5 border border-border-tan bg-surface/50 hover:bg-surface rounded transition-colors opacity-90"
                   >
                     <img 
-                      src={track.coverUrl} 
+                      src={saavnImg(track.coverUrl, 50)} 
                       alt="Cover" 
                       referrerPolicy="no-referrer"
                       className="w-8 h-8 object-cover rounded-sm border border-border-tan flex-shrink-0 grayscale-[25%]"

@@ -120,6 +120,7 @@ export const Turntable: React.FC<TurntableProps> = ({
             <img 
               src={currentTrack.coverUrl} 
               alt="Vinyl Label"
+              fetchPriority="high"
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover opacity-90 absolute inset-0"
             />

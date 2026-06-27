@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span className="font-bold">{item.label}</span>
                       </div>
                       {item.badge && (
-                        <span className={`text-[8px] font-bold px-1 py-0.2 rounded border ${
+                        <span className={`text-xs font-bold px-1 py-0.2 rounded border ${
                           isActive ? "bg-white text-primary border-white" : "bg-primary text-white border-primary animate-pulse"
                         }`}>
                           {item.badge}
@@ -135,16 +135,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-10 h-10 rounded-sm border border-border-tan object-cover"
             />
             {isPremium && (
-              <span className="absolute -bottom-1 -right-1 bg-primary text-white border border-border-tan text-[8px] font-bold px-1 rounded">
+              <span className="absolute -bottom-1 -right-1 bg-primary text-white border border-border-tan text-xs font-bold px-1 rounded">
                 LV99
               </span>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-text-charcoal truncate">
+            <h2 className="text-xs font-bold text-text-charcoal truncate">
               {user ? user.name : "ANON_COLLECTOR"}
-            </h4>
-            <span className="text-[9px] text-gray-500 block truncate">
+            </h2>
+            <span className="text-xs text-gray-700 block truncate">
               {user ? user.idCode : "LEVEL_00 // guest"}
             </span>
           </div>

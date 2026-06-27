@@ -196,7 +196,8 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
               <button 
                 type="submit"
-                className="absolute right-1 top-1/2 -translate-y-1/2 bg-primary text-white text-[8px] font-black px-2 py-1 rounded hover:bg-opacity-90 cursor-pointer"
+                aria-label="Search"
+                className="absolute right-1 top-1/2 -translate-y-1/2 bg-primary text-white text-xs font-black min-h-[24px] px-2 py-1 rounded hover:bg-opacity-90 cursor-pointer"
               >
                 SEARCH
               </button>
@@ -234,7 +235,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
           </div>
         </div>
 
-        <div className="text-right text-[9px] md:text-[10px] text-gray-500 font-bold flex flex-row md:flex-col justify-between md:justify-start items-center md:items-end gap-1.5">
+        <div className="text-right text-xs md:text-xs text-gray-700 font-bold flex flex-row md:flex-col justify-between md:justify-start items-center md:items-end gap-1.5">
           <span className="hidden sm:inline">ACTIVE SOURCE: INTERNAL_OSC</span>
           <span className="block text-primary">STATUS: {isPlaying ? "SPINNING" : "STOPPED"}</span>
         </div>
