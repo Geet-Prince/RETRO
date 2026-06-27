@@ -4,7 +4,7 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, d
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForDevelopment123456",
-  authDomain: typeof window !== "undefined" ? window.location.host : (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "music2d-auth.firebaseapp.com"),
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "music2d-auth.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "music2d-auth",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "music2d-auth.appspot.com",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1234567890",
