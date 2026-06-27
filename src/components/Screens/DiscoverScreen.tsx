@@ -94,7 +94,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
   const heroTrack = allTracks.find(t => t.id === "track-5") || allTracks[0];
 
   return (
-    <div className="flex-1 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide h-full">
+    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono lg:overflow-hidden h-full">
       {/* Search Header Input bar */}
       <div className="relative w-full" ref={containerRef}>
         <form onSubmit={handleSearchSubmit} className="relative w-full">
@@ -160,7 +160,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
         )}
       </div>
 
-      <div className="flex items-center justify-between border-b border-border-tan pb-1.5">
+      <div className="flex items-center justify-between border-b border-border-tan pb-1.5 flex-shrink-0">
         <h2 className="text-base font-bold text-text-charcoal flex items-center gap-1.5">
           <Compass className="w-5 h-5 text-primary" />
           DISCOVER_ARCHIVES
@@ -169,9 +169,9 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
       </div>
 
       {/* Main Column Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-0 overflow-y-auto lg:overflow-hidden pb-4">
         {/* Left 8 Columns */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="lg:col-span-8 flex flex-col gap-6 lg:h-full lg:overflow-y-auto pr-1 scrollbar-hide pb-4">
           
           {/* Hero playlist of the week card */}
           <div className="relative bg-[#FAF3E0] border border-border-tan rounded-lg p-5 flex flex-col md:flex-row gap-5 items-center brutalist-shadow">
@@ -319,7 +319,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
         </div>
 
         {/* Right 4 Columns */}
-        <div className="lg:col-span-4 flex flex-col gap-6 bg-[#FAF3E0] border border-border-tan p-4 rounded-lg brutalist-shadow">
+        <div className="lg:col-span-4 flex flex-col gap-5 bg-[#FAF3E0] border border-border-tan p-4 rounded-lg brutalist-shadow lg:h-full lg:overflow-y-auto scrollbar-hide pb-4">
           
           {/* Genre tags exploration */}
           <div className="flex flex-col gap-2">

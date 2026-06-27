@@ -1114,6 +1114,7 @@ export default function App() {
           { screen: Screen.DISCOVER, label: "DISCOVER", icon: Compass },
           { screen: Screen.JAM_TOGETHER, label: "JAM ROOM", icon: Radio, badge: true },
           { screen: Screen.NOW_SPINNING, label: "SPINNING", icon: Disc },
+          { screen: Screen.PLAYLIST, label: "PLAYLISTS", icon: ListMusic },
           { screen: Screen.LIKED_MUSIC, label: "LIKED", icon: Heart },
           { screen: Screen.PROFILE, label: "PROFILE", icon: User }
         ].map((item) => {
@@ -1132,7 +1133,7 @@ export default function App() {
               <Icon className="w-5 h-5" />
               <span className="text-[8px] font-black tracking-tight">{item.label}</span>
               {item.badge && item.screen === Screen.JAM_TOGETHER && (
-                <span className="absolute top-2 right-4 w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
+                <span className="absolute top-2 right-3 w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
               )}
             </button>
           );

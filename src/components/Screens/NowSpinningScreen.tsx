@@ -169,7 +169,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-6 p-4 md:p-6 font-mono overflow-y-auto scrollbar-hide h-full">
+    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono lg:overflow-hidden h-full">
       {/* Top Header details */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border-tan pb-3 gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
@@ -241,7 +241,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
       </div>
 
       {/* Main Content Splitting */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-0 overflow-y-auto lg:overflow-hidden pb-4">
         {/* Left 7 Columns: Turntable & Wave visualizers */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           <Turntable 
@@ -260,7 +260,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
         </div>
 
         {/* Right 5 Columns: Interactive Multi-Tab Console */}
-        <div className="lg:col-span-5 bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-4 h-full lg:min-h-[480px]">
+        <div className="lg:col-span-5 bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-4 lg:h-full min-h-[400px] lg:min-h-0 overflow-hidden">
           {/* Tab Navigation header */}
           <div className="flex border-b-2 border-[#1A1A1A]">
             {(["queue", "liked", "playlist", "search"] as Tab[]).map((tab) => (
@@ -279,15 +279,15 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
           </div>
 
           {/* TAB CONTENTS */}
-          <div className="flex-1 flex flex-col gap-3 min-h-[300px] overflow-hidden">
+          <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-hidden">
             {activeTab === "queue" && (
-              <div className="flex-grow flex flex-col gap-3 h-full">
+              <div className="flex-1 flex flex-col gap-3 min-h-0">
                 <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
                   <span>QUEUE CONTROLS</span>
                   <span>{queue.length} TRACKS LOADED</span>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 scrollbar-hide">
                   {queue.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
                       QUEUE_EMPTY
@@ -382,13 +382,13 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
             )}
 
             {activeTab === "liked" && (
-              <div className="flex-grow flex flex-col gap-3 h-full">
+              <div className="flex-1 flex flex-col gap-3 min-h-0">
                 <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
                   <span>LIKED SELECTIONS</span>
                   <span>{likedTracks.length} SONGS</span>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 scrollbar-hide">
                   {likedTracks.length === 0 ? (
                     <div className="text-center py-16 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
                       NO LIKED SONGS YET
@@ -442,13 +442,13 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
             )}
 
             {activeTab === "playlist" && (
-              <div className="flex-grow flex flex-col gap-3 h-full">
+              <div className="flex-1 flex flex-col gap-3 min-h-0">
                 <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
                   <span>PLAYLIST ARCHIVES</span>
                   <span>{playlists.length} PLAYLISTS</span>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 scrollbar-hide">
                   {playlists.length === 0 ? (
                     <div className="text-center py-16 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
                       NO PLAYLISTS AVAILABLE
@@ -508,9 +508,9 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
             )}
 
             {activeTab === "search" && (
-              <div className="flex-grow flex flex-col gap-3 h-full">
+              <div className="flex-1 flex flex-col gap-3 min-h-0">
                 {/* Local search results list */}
-                <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 scrollbar-hide">
                   {isSearching ? (
                     <div className="text-center py-12 text-[10px] text-gray-400 animate-pulse">
                       Searching music archive...

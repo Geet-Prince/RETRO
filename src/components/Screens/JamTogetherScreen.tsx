@@ -338,7 +338,7 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
   const vibe = roomInfo?.vibe || 50;
 
   return (
-    <div className="flex-1 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide h-full">
+    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono lg:overflow-hidden h-full">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border-tan pb-3">
         <div className="flex items-center gap-3">
@@ -374,9 +374,9 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
       </div>
 
       {/* Main Grid Splitting */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-0 overflow-y-auto lg:overflow-hidden pb-4">
         {/* Left Column (8 units): Live Audio Center & Queue */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="lg:col-span-8 flex flex-col gap-6 lg:h-full lg:overflow-y-auto pr-1 scrollbar-hide pb-4">
           
           {/* Jam Room Song Search */}
           <div ref={jamSearchRef} className="relative w-full">
@@ -554,7 +554,7 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
         </div>
 
         {/* Right Column (4 units): Feed and telemetry */}
-        <div className="lg:col-span-4 bg-[#FAF3E0] border border-border-tan p-4 rounded-lg brutalist-shadow flex flex-col gap-4 h-full min-h-[460px]">
+        <div className="lg:col-span-4 bg-[#FAF3E0] border border-border-tan p-4 rounded-lg brutalist-shadow flex flex-col gap-4 lg:h-full min-h-[400px] lg:min-h-0 overflow-hidden">
           
           {/* Metadata gauges */}
           <div className="border-b border-border-tan pb-3 flex flex-col gap-2">
@@ -588,9 +588,9 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
           </div>
 
           {/* Activity Chat Feed */}
-          <div className="flex-1 flex flex-col justify-between h-[300px]">
+          <div className="flex-1 flex flex-col justify-between min-h-0">
             {/* Scroll messages box */}
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 max-h-[220px] scrollbar-hide">
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 min-h-0 scrollbar-hide">
               {messages.map((m) => {
                 let textCol = "text-text-charcoal";
                 let bgCol = "bg-surface";
