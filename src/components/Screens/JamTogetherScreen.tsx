@@ -635,6 +635,7 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
               />
               <button 
                 type="submit"
+                aria-label="Send message"
                 className="bg-primary text-white border border-primary p-2 rounded hover:bg-opacity-95 shadow cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />

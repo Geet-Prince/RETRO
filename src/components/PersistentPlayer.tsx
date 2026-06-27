@@ -242,7 +242,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
           const currentPeaks = peaksRef.current;
           const barCount = currentPeaks.length || 120;
           const gap = 2;
-          const barWidth = (cssWidth - (barCount - 1) * gap) / barCount;
+          const barWidth = Math.max(0.5, (cssWidth - (barCount - 1) * gap) / barCount);
           const centerY = cssHeight / 2;
           
           // Beat scale multiplier: reacts dynamically to kicks/bass
@@ -269,7 +269,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             
             wCtx.beginPath();
             if (wCtx.roundRect) {
-              wCtx.roundRect(x, y, barWidth, h, barWidth / 2);
+              wCtx.roundRect(x, y, barWidth, h, Math.max(0, barWidth / 2));
             } else {
               wCtx.rect(x, y, barWidth, h);
             }

@@ -163,6 +163,7 @@ export const Turntable: React.FC<TurntableProps> = ({
         </div>
         <button 
           onClick={onToggleLike}
+          aria-label={isLiked ? "Unlike Track" : "Like Track"}
           className={`p-2 rounded-full border transition-all ${
             isLiked 
               ? "bg-red-50 border-red-200 text-red-500" 

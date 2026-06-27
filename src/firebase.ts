@@ -11,11 +11,14 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1234567890:web:abcdef123456"
 };
 
+// Check if Firebase key is unconfigured
+export const isDummy = firebaseConfig.apiKey === "AIzaSyDummyKeyForDevelopment123456";
+
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const auth = getAuth(app);
+export const auth = !isDummy ? getAuth(app) : ({} as any);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+export const db = !isDummy ? getFirestore(app) : ({} as any);
 
 export { signInWithPopup, signOut };
 
@@ -28,6 +31,17 @@ export function isMobileOrCapacitor() {
 
 // Helper to perform Google OAuth Login
 export async function signInWithGoogle() {
+  if (isDummy) {
+    // Return a mock user profile immediately in local development mode without remote calls
+    const mockUid = "local-developer-uid";
+    await syncUserProfile(
+      mockUid,
+      "Developer",
+      "dev@retro.music"
+    );
+    return { user: { uid: mockUid } } as any;
+  }
+
   try {
     if (isMobileOrCapacitor()) {
       await signInWithRedirect(auth, googleProvider);
@@ -44,6 +58,8 @@ export async function signInWithGoogle() {
 
 // Check and process redirect login results (needed for mobile/Capacitor redirect logins)
 export async function checkRedirectResult() {
+  if (isDummy) return null;
+
   try {
     const result = await getRedirectResult(auth);
     if (result && result.user) {
@@ -402,6 +418,36 @@ export async function addTrackToPlaylist(uid: string, playlistId: string, track:
 
 // 1. Get active rooms list in real-time
 export function listenToJamRooms(onUpdate: (rooms: any[]) => void) {
+  if (isDummy) {
+    onUpdate([{
+      roomId: "solaris-drift",
+      roomName: "SOLARIS DRIFT REC",
+      hostId: "STITCH_DJ",
+      currentTrack: {
+        id: "track-room",
+        title: "SOLARIS DRIFT",
+        artist: "MONO ECHO & THE CURATORS",
+        album: "SPACE SHIFT SELECTIONS",
+        duration: "04:45",
+        coverUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=300&q=75",
+        genre: "AMBIENT",
+        audioUrl: "https://aac.saavncdn.com/392/8ab72e5058ec1438fa910f135b5bb27d_160.mp4"
+      },
+      isPlaying: true,
+      progressSecs: 45,
+      listeners: [
+        { id: "STITCH_DJ", name: "Stitch (DJ)", avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCGmeCkoVquhy-m8Wte3R2DcLiclHPKOGO5VuMEqxBYIAruLB_zTodjOPmN7JU5OIrPHAhbjwk8cY7Kp0THzcdmgaNVbyG9oIj_yl2T5cSuv94aQiUjVPw_3jpEVTnnj_BHZrOepyIrINdGNknlshROqesC3brDrNfi2sB7dJQ8E4mCj2PETuYzDpkKIAWWECH_xhVPb-5bNTJa2GqvvSIQ4sTIZ9somhHC5NY-beOV6zEY0TYqMqyfE9V8liqrbhEx4CezJ5Yclms", isDj: true }
+      ],
+      messages: [
+        { id: "msg-1", user: "Stitch (DJ)", text: "Welcome to the drift session. Local offline mode is active.", timestamp: "12:45 PM", isDj: true }
+      ],
+      vibe: 85,
+      lastUpdated: Date.now() - 45000,
+      passcode: ""
+    }]);
+    return () => {};
+  }
+
   const roomsCol = collection(db, "rooms");
   return onSnapshot(roomsCol, (snapshot) => {
     const list: any[] = [];
@@ -514,6 +560,39 @@ export async function createJamRoom(roomName: string, passcode: string | null, u
 
 // 3. Join a jam room
 export async function joinJamRoom(roomId: string, user: any, passcode: string | null, onUpdate: (room: any) => void) {
+  if (isDummy) {
+    const mockRoom = {
+      roomId,
+      roomName: roomId === "solaris-drift" ? "SOLARIS DRIFT REC" : "LOCAL BROADCAST STATION",
+      hostId: user.uid || "local-developer-uid",
+      currentTrack: {
+        id: "track-room",
+        title: "SOLARIS DRIFT",
+        artist: "MONO ECHO & THE CURATORS",
+        album: "SPACE SHIFT SELECTIONS",
+        duration: "04:45",
+        coverUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=300&q=75",
+        genre: "AMBIENT",
+        audioUrl: "https://aac.saavncdn.com/392/8ab72e5058ec1438fa910f135b5bb27d_160.mp4"
+      },
+      isPlaying: true,
+      progressSecs: 45,
+      listeners: [
+        { id: user.uid || "local-developer-uid", name: user.name, avatarUrl: user.avatarUrl, isDj: true }
+      ],
+      messages: [
+        { id: "msg-1", user: "SYSTEM", text: `${user.name} tuned in locally.`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isSystem: true }
+      ],
+      vibe: 90,
+      lastUpdated: Date.now(),
+      passcode: passcode || ""
+    };
+    
+    // Fire callback synchronously to configure page state
+    onUpdate(mockRoom);
+    return () => {}; // return empty unsubscribe handler
+  }
+
   const roomDocRef = doc(db, "rooms", roomId);
   const userId = user.uid || `guest-${Date.now()}`;
   const newListener = {

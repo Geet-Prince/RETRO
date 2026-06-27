@@ -43,6 +43,7 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
           {selectedPlaylistId && (
             <button 
               onClick={() => setSelectedPlaylistId(null)}
+              aria-label="Back to playlists list"
               className="bg-surface border border-border-tan hover:bg-surface-container-high transition-colors p-1.5 rounded cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 text-gray-500" />
@@ -112,7 +113,7 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
           {playlists.length === 0 ? (
             <div className="text-center py-24 border border-dashed border-border-tan bg-surface rounded-lg flex flex-col items-center justify-center gap-3">
               <ListMusic className="w-8 h-8 text-gray-300" />
-              <h4 className="text-xs font-bold text-text-charcoal uppercase">NO PLAYLISTS REGISTERED</h4>
+              <h3 className="text-xs font-bold text-text-charcoal uppercase">NO PLAYLISTS REGISTERED</h3>
               <p className="text-[10px] text-gray-400 max-w-xs leading-normal text-center">
                 Add songs to playlists by clicking "+ PL" on any track card, or launch a new blank playlist registry above.
               </p>
@@ -153,9 +154,9 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
                     </div>
                   </div>
 
-                  <h4 className="text-[11px] font-black text-text-charcoal truncate group-hover:text-primary transition-colors leading-tight uppercase">
+                  <h3 className="text-[11px] font-black text-text-charcoal truncate group-hover:text-primary transition-colors leading-tight uppercase">
                     {pl.name}
-                  </h4>
+                  </h3>
                   <p className="text-[8px] text-gray-400 uppercase mt-1 tracking-widest leading-none font-bold">
                     {pl.tracks?.length || 0} TRACKS
                   </p>

@@ -30,6 +30,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
       <div className="flex items-center gap-3">
         <button 
           onClick={onClearSearch}
+          aria-label="Back to previous screen"
           className="bg-surface border border-border-tan hover:bg-surface-container-high transition-colors p-1.5 rounded cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-gray-500" />
@@ -153,9 +154,9 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
                 </div>
               </div>
 
-              <h4 className="text-[10px] font-bold text-text-charcoal truncate group-hover:text-primary transition-colors leading-tight">
+              <h3 className="text-[10px] font-bold text-text-charcoal truncate group-hover:text-primary transition-colors leading-tight">
                 {track.title}
-              </h4>
+              </h3>
               <p className="text-[8px] text-gray-500 truncate uppercase mt-0.5 tracking-tighter leading-none">
                 {track.artist}
               </p>
