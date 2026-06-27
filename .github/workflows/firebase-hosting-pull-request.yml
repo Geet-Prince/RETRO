@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: echo "Build $GITHUB_RUN_ID at $(date)" > public/build-version.txt
       - run: npm ci && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0.11.0
         with:
