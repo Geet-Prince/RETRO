@@ -251,13 +251,22 @@
 @keyframes retro-glow {
   0%, 100% {
     text-shadow: 0 0 4px rgba(156, 63, 0, 0.4), 0 0 10px rgba(156, 63, 0, 0.2);
+    color: var(--color-primary);
+  }
+  48%, 52%, 78%, 82% {
+    text-shadow: 0 0 10px rgba(156, 63, 0, 0.9), 0 0 20px rgba(156, 63, 0, 0.6), 0 0 30px rgba(156, 63, 0, 0.4);
+    color: #ff8533;
   }
   50% {
-    text-shadow: 0 0 10px rgba(156, 63, 0, 0.9), 0 0 20px rgba(156, 63, 0, 0.6), 0 0 30px rgba(156, 63, 0, 0.4);
-    color: #b54900;
+    text-shadow: none;
+    color: var(--color-on-surface-variant); /* Flicker out */
+  }
+  80% {
+    text-shadow: none;
+    color: var(--color-on-surface-variant);
   }
 }
 
 .animate-retro-glow {
-  animation: retro-glow 2.5s infinite ease-in-out;
+  animation: retro-glow 5s infinite cubic-bezier(0.25, 0.1, 0.25, 1);
 }

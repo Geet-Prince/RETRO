@@ -23,7 +23,14 @@ import { Bell, Settings, Menu, Play, Plus, ListMusic, Compass, Radio, Disc, Hear
 
 export default function App() {
   // Navigation & Theme
-  const [currentScreen, setScreen] = useState<Screen>(Screen.LANDING);
+  const [currentScreen, setScreen] = useState<Screen>(() => {
+    const saved = sessionStorage.getItem("retro_screen");
+    return saved ? (saved as Screen) : Screen.LANDING;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem("retro_screen", currentScreen);
+  }, [currentScreen]);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("retro_theme") === "dark";
   });
@@ -917,7 +924,7 @@ export default function App() {
         {/* Public Views content wrapper */}
         <div className="flex-1 overflow-hidden relative">
           <Suspense fallback={<div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-500 bg-surface">LOADING_TERMINAL...</div>}>
-            {currentScreen === Screen.LANDING && (
+            {(currentScreen === Screen.LANDING || (currentScreen !== Screen.LOGIN && currentScreen !== Screen.REGISTER)) && (
               <LandingPageScreen 
                 setScreen={setScreen}
                 isLoggedIn={false}
