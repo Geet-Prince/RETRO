@@ -20,7 +20,7 @@ let synthPlayhead = 0;
 let synthPlayheadInterval: NodeJS.Timeout | null = null;
 let lastSource: string | undefined = undefined;
 
-function initAudio() {
+export function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
@@ -92,7 +92,7 @@ export function getAnalyserData() {
   }
 }
 
-export function playAudioStream(url: string, onEnded?: () => void) {
+export function playAudioStream(url: string, onEnded?: () => void): Promise<void> | void {
   try {
     const isResuming = (url === lastSource);
     lastSource = url;
@@ -104,10 +104,7 @@ export function playAudioStream(url: string, onEnded?: () => void) {
     
     // Check if we are just resuming the same track
     if (htmlAudio && (htmlAudio.src === url || htmlAudio.src === encodeURI(url))) {
-      htmlAudio.play().catch(err => {
-        console.warn("Autoplay was blocked or audio error", err);
-      });
-      return;
+      return htmlAudio.play();
     }
     
     if (htmlAudio) {
@@ -128,11 +125,10 @@ export function playAudioStream(url: string, onEnded?: () => void) {
       });
     }
     
-    htmlAudio.play().catch(err => {
-      console.warn("Autoplay was blocked or audio error", err);
-    });
+    return htmlAudio.play();
   } catch (e) {
     console.error("HTML Audio play error", e);
+    return Promise.reject(e);
   }
 }
 
@@ -157,11 +153,10 @@ export function getAudioCurrentTime(): number {
   return synthPlayhead;
 }
 
-export function playSynthTone(frequencyStr: string | undefined, onEnded?: () => void) {
+export function playSynthTone(frequencyStr: string | undefined, onEnded?: () => void): Promise<void> | void {
   // If the audio URL is actually a full link (HTTP/HTTPS), run playAudioStream instead!
   if (frequencyStr && (frequencyStr.startsWith("http://") || frequencyStr.startsWith("https://"))) {
-    playAudioStream(frequencyStr, onEnded);
-    return;
+    return playAudioStream(frequencyStr, onEnded);
   }
 
   try {

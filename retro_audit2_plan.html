@@ -1,0 +1,300 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+.scores{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.score-card{background:var(--surface-1);border-radius:var(--radius);padding:12px 14px;text-align:center;}
+.score-label{font-size:11px;color:var(--text-muted);margin-bottom:6px;}
+.score-val{font-size:26px;font-weight:500;}
+.score-delta{font-size:11px;margin-top:3px;}
+.green{color:#0ca30c;}.amber{color:#c98500;}.red{color:#d03b3b;}.blue{color:#185fa5;}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:20px;}
+.m{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;}
+.ml{font-size:10px;color:var(--text-muted);margin-bottom:3px;}
+.mv{font-size:18px;font-weight:500;}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;}
+.ch{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:0.5px solid var(--border);}
+.sev{font-size:10px;font-weight:500;border-radius:4px;padding:3px 8px;flex-shrink:0;}
+.sc{background:#fcebeb;color:#a32d2d;}
+.sh{background:#faeeda;color:#633806;}
+.sm{background:#e6f1fb;color:#0c447c;}
+.si{background:#eaf3de;color:#27500a;}
+.ct{font-size:13px;font-weight:500;color:var(--text-primary);flex:1;}
+.sv{font-size:11px;color:var(--text-muted);flex-shrink:0;}
+.cb{padding:12px 16px;}
+.cause{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:10px;border-left:2px solid var(--border-strong);padding-left:10px;}
+.fix{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-primary);line-height:1.5;margin-bottom:6px;}
+.fix i{color:var(--text-accent);font-size:13px;margin-top:2px;flex-shrink:0;}
+code{font-family:var(--font-mono);font-size:11px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:3px;padding:1px 5px;}
+.cb-code{background:var(--surface-1);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);line-height:1.8;margin:8px 0;}
+.sh-label{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px;}
+.row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.row:last-child{border-bottom:none;}
+.rl{color:var(--text-secondary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rv{color:var(--text-primary);font-weight:500;flex-shrink:0;}
+.acc-row{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px;align-items:flex-start;}
+.acc-row:last-child{border-bottom:none;}
+.acc-tag{font-size:10px;font-weight:500;border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;}
+.acc-body{flex:1;min-width:0;}
+.acc-title{font-weight:500;color:var(--text-primary);margin-bottom:3px;}
+.acc-desc{color:var(--text-secondary);line-height:1.5;}
+.lcp-bar{display:flex;gap:2px;align-items:stretch;height:24px;margin:10px 0;}
+.lcp-seg{border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:white;white-space:nowrap;overflow:hidden;}
+.info-box{background:var(--bg-accent);border:0.5px solid var(--border-accent);border-radius:10px;padding:12px 14px;margin-top:10px;}
+.warn-box{background:#faeeda;border:0.5px solid #fab41b55;border-radius:10px;padding:12px 14px;margin-top:10px;}
+</style>
+
+<h2 class="sr-only">Performance and accessibility improvement plan for retro.geetprince.me — second Lighthouse audit analysis.</h2>
+
+<div style="padding:1rem 0 0.5rem;">
+
+<p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Big improvement from last run. Performance jumped from ~50s load → sub-2s. Here's what's still left to fix.</p>
+
+<div class="scores">
+  <div class="score-card">
+    <div class="score-label">Performance</div>
+    <div class="score-val amber">86</div>
+    <div class="score-delta green">was ~40 before ↑</div>
+  </div>
+  <div class="score-card">
+    <div class="score-label">Accessibility</div>
+    <div class="score-val red">74</div>
+    <div class="score-delta red">needs work</div>
+  </div>
+  <div class="score-card">
+    <div class="score-label">Best Practices</div>
+    <div class="score-val green">100</div>
+    <div class="score-delta green">perfect ✓</div>
+  </div>
+  <div class="score-card">
+    <div class="score-label">SEO</div>
+    <div class="score-val green">100</div>
+    <div class="score-delta green">perfect ✓</div>
+  </div>
+</div>
+
+<div class="metrics">
+  <div class="m"><div class="ml">FCP</div><div class="mv amber">1.2 s</div><div style="font-size:10px;color:var(--text-muted);">target &lt;1.8 s ✓ close</div></div>
+  <div class="m"><div class="ml">LCP</div><div class="mv amber">1.9 s</div><div style="font-size:10px;color:var(--text-muted);">target &lt;2.5 s — just passing</div></div>
+  <div class="m"><div class="ml">TBT</div><div class="mv green">10 ms</div><div style="font-size:10px;color:var(--text-muted);">✓ excellent</div></div>
+  <div class="m"><div class="ml">TTI</div><div class="mv green">1.9 s</div><div style="font-size:10px;color:var(--text-muted);">✓ excellent</div></div>
+  <div class="m"><div class="ml">Speed Index</div><div class="mv amber">1.6 s</div><div style="font-size:10px;color:var(--text-muted);">target &lt;3.4 s ✓</div></div>
+  <div class="m"><div class="ml">CLS</div><div class="mv green">0</div><div style="font-size:10px;color:var(--text-muted);">✓ perfect</div></div>
+</div>
+
+<p style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Performance issues remaining</p>
+
+<div class="card">
+  <div class="ch">
+    <span class="sev sc">Critical</span>
+    <span class="ct">Google Analytics loading 940 KB of unused JS — biggest waste</span>
+    <span class="sv">232 KB wasted</span>
+  </div>
+  <div class="cb">
+    <p class="cause">Two GA4 scripts (<code>gtag/js</code> and <code>analytics.js</code>) together load 940 KB but waste 170 KB of unused code. They're also loaded synchronously, adding to your LCP delay. This is your #1 remaining performance drag — GA is heavier than your entire app.</p>
+    <div class="sh-label">Bundle breakdown</div>
+    <div style="border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;padding:0 12px;">
+      <div class="row"><span class="rl">gtag/js (Google Analytics)</span><span class="rv red">470 KB · 109 KB wasted</span></div>
+      <div class="row"><span class="rl">analytics.js (GA tag manager)</span><span class="rv red">470 KB · 61 KB wasted</span></div>
+      <div class="row"><span class="rl">vendor-firebase.js (unminified)</span><span class="rv amber">535 KB · 28 KB unminified</span></div>
+    </div>
+    <div class="fix" style="margin-top:10px;"><i class="ti ti-check" aria-hidden="true"></i>Load GA with <code>async</code> — it's probably blocking right now. Change to: <code>&lt;script async src="https://www.googletagmanager.com/gtag/js?id=G-2JN5RTZ45Z"&gt;</code></div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Or load GA only after first user interaction — saves 170 KB on initial load entirely:
+    </div>
+    <div class="cb-code">// In main.jsx or App.jsx — defer GA until interaction
+const loadGA = () => {
+  if (window.gaLoaded) return;
+  window.gaLoaded = true;
+  const s = document.createElement('script');
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-2JN5RTZ45Z';
+  s.async = true;
+  document.head.appendChild(s);
+};
+window.addEventListener('scroll', loadGA, { once: true });
+window.addEventListener('click', loadGA, { once: true });</div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Firebase vendor bundle is partially unminified — run <code>npx vite build</code> and check <code>vite.config.js</code> has <code>build: { minify: 'esbuild' }</code> explicitly set.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch">
+    <span class="sev sh">High</span>
+    <span class="ct">LCP image still not discoverable — 875 ms resource load delay</span>
+  </div>
+  <div class="cb">
+    <p class="cause">The LCP vinyl label image (from <code>c.saavncdn.com</code>) is still being injected by React after JS runs — not in the initial HTML. The browser wastes 875 ms before it even starts fetching it. This is the same issue as before, unfixed.</p>
+    <div class="lcp-bar">
+      <div class="lcp-seg" style="width:26%;background:#0ca30c;">TTFB 548ms</div>
+      <div class="lcp-seg" style="width:42%;background:#d03b3b;">Load delay 876ms</div>
+      <div class="lcp-seg" style="width:3%;background:#c98500;">Load 66ms</div>
+      <div class="lcp-seg" style="width:28%;background:#ba7517;">Render 585ms</div>
+    </div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>fetchpriority="high"</code> to your vinyl/album art <code>&lt;img&gt;</code> — the one in <code>div.w-28 &gt; img.w-full</code>. This is a 1-line fix.</div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add these preconnects to <code>index.html &lt;head&gt;</code> — saves ~90 ms each:</div>
+    <div class="cb-code">&lt;link rel="preconnect" href="https://c.saavncdn.com"&gt;
+&lt;link rel="preconnect" href="https://lh3.googleusercontent.com"&gt;
+&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Your TTFB is now 548 ms (was fine before) — Firebase installations and Railway API are both ~430–450 ms. Add a loading skeleton immediately on mount so users see something during this wait.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch">
+    <span class="sev sh">High</span>
+    <span class="ct">Album art images serving 500×500 px at 36×36 px display size</span>
+    <span class="sv">309 KB wasted</span>
+  </div>
+  <div class="cb">
+    <p class="cause">6 song cover images (the small sidebar thumbnails <code>w-9 h-9</code> = 36×36 px) are fetching <code>500x500</code> JPEGs from Saavn CDN. That's 194× more pixels than needed. One image (<code>Humpty-Sharma-Ki-Dulhania</code>) has 0-second cache and wastes 68 KB on every page load.</p>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>JioSaavn CDN supports size in URL — replace <code>500x500</code> with <code>50x50</code> for thumbnails. Add this utility:</div>
+    <div class="cb-code">// utils/image.js
+export const saavnImg = (url, size = 50) =>
+  url?.replace(/\d+x\d+/, `${size}x${size}`) ?? '';
+
+// Usage in SongCard:
+&lt;img src={saavnImg(song.image, 50)} alt="Cover" /&gt;
+// For now-playing vinyl (LCP):
+&lt;img src={saavnImg(song.image, 300)} fetchpriority="high" alt="Vinyl Label" /&gt;</div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>The 0-cache image is a fresh Saavn URL — those images have no cache headers on their end. Cache the URL→blob in IndexedDB or use a service worker to cache responses from <code>c.saavncdn.com</code>.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch">
+    <span class="sev sh">High</span>
+    <span class="ct">Your own JS bundles still only have 1-hour cache</span>
+    <span class="sv">96 KB wasted per revisit</span>
+  </div>
+  <div class="cb">
+    <p class="cause">Your Vite-hashed bundles (<code>vendor-firebase-BZH0ZvW1.js</code>, etc.) are safe to cache for 1 year since the hash changes on every build — but Firebase Hosting still serves them with <code>max-age=3600</code> (1 hour). Every returning user re-downloads your entire app.</p>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>This fix takes 2 minutes — add to <code>firebase.json</code>:</div>
+    <div class="cb-code">{
+  "hosting": {
+    "headers": [{
+      "source": "/assets/**",
+      "headers": [{
+        "key": "Cache-Control",
+        "value": "public, max-age=31536000, immutable"
+      }]
+    }]
+  }
+}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch">
+    <span class="sev sm">Medium</span>
+    <span class="ct">CSS file is render-blocking — delays first paint</span>
+    <span class="sv">300 ms est. saving</span>
+  </div>
+  <div class="cb">
+    <p class="cause"><code>index-CIw1bhKG.css</code> (9 KB) is loaded as a blocking stylesheet. The browser can't paint anything until this file downloads and parses — directly pushing FCP past 1.2 s.</p>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Vite inlines critical CSS automatically in production. Check if your build mode is truly production — run <code>npx vite build --mode production</code> and verify the output.</div>
+    <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>For the Google Fonts import (if still in CSS): move it to <code>index.html</code> with <code>rel="preload"</code> so it loads in parallel with everything else.</div>
+  </div>
+</div>
+
+<p style="font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 10px;">Accessibility issues — score is 74, target 90+</p>
+
+<div class="card">
+  <div class="ch">
+    <span class="sev sc">5 issues</span>
+    <span class="ct">Accessibility fixes — all in your JSX</span>
+  </div>
+  <div class="cb">
+    <div style="border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;padding:0 12px;">
+
+      <div class="acc-row">
+        <span class="acc-tag" style="background:#fcebeb;color:#a32d2d;">Buttons</span>
+        <div class="acc-body">
+          <div class="acc-title">5 icon buttons have no accessible name</div>
+          <div class="acc-desc">All 5 are <code>button.p-1</code> in your player controls — play, skip, like etc. Screen readers say "button" with no context. Fix: add <code>aria-label</code> to every icon button.</div>
+          <div class="cb-code" style="margin-top:6px;">&lt;!-- Before --&gt;
+&lt;button className="p-1 rounded bg-[#fff9ef]..."&gt;
+  &lt;PlayIcon /&gt;
+&lt;/button&gt;
+
+&lt;!-- After --&gt;
+&lt;button className="p-1 rounded bg-[#fff9ef]..."
+  aria-label="Play"&gt;
+  &lt;PlayIcon aria-hidden="true" /&gt;
+&lt;/button&gt;</div>
+        </div>
+      </div>
+
+      <div class="acc-row">
+        <span class="acc-tag" style="background:#faeeda;color:#633806;">Contrast</span>
+        <div class="acc-body">
+          <div class="acc-title">7 elements fail WCAG AA contrast ratio (4.5:1 minimum)</div>
+          <div class="acc-desc">Specific failures found in your actual code:</div>
+          <div style="margin-top:6px;font-size:11px;line-height:1.8;color:var(--text-secondary);">
+            • <code>span.font-bold</code> "NOW_SPINNING" in nav — text too light on background<br>
+            • <code>span.text-[8px]</code> "LIVE" badge — white text on <code>bg-primary</code> at 8px is too small<br>
+            • <code>span.absolute</code> "LV99" badge — white on primary color fails at small size<br>
+            • <code>span.text-[9px] text-gray-500</code> "CURATOR_ID" — gray-500 on light bg fails<br>
+            • <code>button.bg-[#FFEAEA]</code> "LOGOUT" — red text on pink bg fails<br>
+            • Search submit button — white text at <code>text-[8px]</code> on primary<br>
+            • <code>span.hidden sm:inline</code> "ACTIVE SOURCE" text
+          </div>
+          <div class="fix" style="margin-top:8px;"><i class="ti ti-check" aria-hidden="true"></i>Increase all text sizes below 12px to at least 12px — <code>text-[8px]</code> and <code>text-[9px]</code> are the main culprits.</div>
+          <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>For "CURATOR_ID": change <code>text-gray-500</code> → <code>text-gray-700</code> (dark mode: <code>text-gray-300</code>).</div>
+          <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>For "LOGOUT" button <code>bg-[#FFEAEA]</code>: use <code>text-red-700</code> instead of lighter red to get 4.5:1.</div>
+        </div>
+      </div>
+
+      <div class="acc-row">
+        <span class="acc-tag" style="background:#e6f1fb;color:#0c447c;">Heading</span>
+        <div class="acc-body">
+          <div class="acc-title">h4 appears before any h2/h3 in the sidebar</div>
+          <div class="acc-desc">Your sidebar has <code>&lt;h4 class="text-xs font-bold"&gt;</code> with no h2 or h3 parent. Screen readers rely on heading order to navigate. Change sidebar section labels to <code>&lt;h3&gt;</code> or <code>&lt;h2&gt;</code>.</div>
+        </div>
+      </div>
+
+      <div class="acc-row">
+        <span class="acc-tag" style="background:#eaf3de;color:#27500a;">Form</span>
+        <div class="acc-body">
+          <div class="acc-title">Volume range input has no label</div>
+          <div class="acc-desc">Your <code>&lt;input type="range" min="0" max="100"&gt;</code> (volume slider) is invisible to screen readers — it has no <code>&lt;label&gt;</code> or <code>aria-label</code>. Fix:</div>
+          <div class="cb-code" style="margin-top:6px;">&lt;input
+  type="range"
+  min="0" max="100"
+  aria-label="Volume"
+  className="absolute inset-0 w-full opacity-0 cursor-pointer"
+/&gt;</div>
+        </div>
+      </div>
+
+      <div class="acc-row">
+        <span class="acc-tag" style="background:#eeedfe;color:#3c3489;">Touch</span>
+        <div class="acc-body">
+          <div class="acc-title">Search submit button is 45×20 px — too small to tap</div>
+          <div class="acc-desc">Google requires 24×24 px minimum tap target. Your search button is only 20 px tall. It's the <code>button[type=submit]</code> inside the search bar. Increase padding or min-height:</div>
+          <div class="cb-code" style="margin-top:6px;">&lt;!-- Before --&gt;
+&lt;button type="submit" className="absolute right-1 top-1/2 -translate-y-1/2 ...text-[8px]"&gt;
+
+&lt;!-- After: add min-h and bigger text --&gt;
+&lt;button type="submit"
+  className="absolute right-1 top-1/2 -translate-y-1/2 ...text-xs min-h-[24px] px-2"
+  aria-label="Search"&gt;</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="info-box">
+  <p style="font-size:12px;font-weight:500;color:var(--text-accent);margin-bottom:8px;">Fix order to hit Performance 95+ and Accessibility 90+</p>
+  <p style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
+    1. <strong>Defer GA loading</strong> → biggest perf gain, 170 KB removed from initial load<br>
+    2. <strong>Add <code>fetchpriority="high"</code> to LCP image</strong> → 1 line, cuts LCP to ~1.5 s<br>
+    3. <strong>Replace 500×500 Saavn URLs with 50×50</strong> → 309 KB saved, 5-min change<br>
+    4. <strong>Add firebase.json cache headers</strong> → 2-min change, big win for returning users<br>
+    5. <strong>Add aria-label to 5 player buttons</strong> → biggest accessibility gain<br>
+    6. <strong>Fix text-[8px]/text-[9px] contrast</strong> → fixes 7 contrast failures at once<br>
+    7. <strong>Add aria-label to volume slider + fix heading order</strong> → finishes accessibility
+  </p>
+</div>
+
+</div>

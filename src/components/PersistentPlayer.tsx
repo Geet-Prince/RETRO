@@ -111,11 +111,18 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
 
   // Progress tracker state
   const [progressSecs, setProgressSecs] = useState<number>(0);
-  const [volume, setVolume] = useState<number>(75);
+  const [volume, setVolume] = useState<number>(() => {
+    const saved = localStorage.getItem("retro_volume");
+    return saved ? Number(saved) : 75;
+  });
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [showQueue, setShowQueue] = useState<boolean>(false);
   const [showLyrics, setShowLyrics] = useState<boolean>(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem("retro_volume", String(volume));
+  }, [volume]);
 
   // Parse duration ("04:12" -> 252 secs)
   const durationParts = (currentTrack?.duration || "00:00").split(":");
@@ -151,6 +158,9 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
     const updateProgress = () => {
       const current = Math.floor(getAudioCurrentTime());
       setProgressSecs(current);
+      if (currentTrack) {
+        localStorage.setItem("retro_last_time", String(current));
+      }
       if (isPlaying && current >= totalSecs && totalSecs > 0) {
         if (isRepeat) {
           seekAudio(0);

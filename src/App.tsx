@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
-import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio, setAudioLoop } from "./utils/audio";
+import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio, setAudioLoop, initAudio } from "./utils/audio";
 import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist, checkRedirectResult, logAnalyticsEvent } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
@@ -20,17 +20,18 @@ const LoginScreen = lazy(() => import("./components/Screens/LoginScreen").then(m
 const RegisterScreen = lazy(() => import("./components/Screens/RegisterScreen").then(m => ({ default: m.RegisterScreen })));
 
 import { Bell, Settings, Menu, Play, Plus, ListMusic, Compass, Radio, Disc, Heart, User } from "lucide-react";
+import Cookies from 'js-cookie';
 
 export default function App() {
   // Navigation & Theme
   const [currentScreen, setScreen] = useState<Screen>(Screen.NOW_SPINNING);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem("retro_theme") === "dark";
+    return Cookies.get("retro_theme") === "dark";
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem("retro_theme", isDarkMode ? "dark" : "light");
+    Cookies.set("retro_theme", isDarkMode ? "dark" : "light", { expires: 365, secure: false, sameSite: 'Lax' });
   }, [isDarkMode]);
 
 
@@ -54,7 +55,14 @@ export default function App() {
     }
     return MOCK_TRACKS[0];
   });
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(() => {
+    return localStorage.getItem("retro_is_playing") === "true";
+  });
+  const isInitialMount = React.useRef(true);
+
+  useEffect(() => {
+    localStorage.setItem("retro_is_playing", String(isPlaying));
+  }, [isPlaying]);
   const [likedTrackIds, setLikedTrackIds] = useState<string[]>([]);
   const [likedTracks, setLikedTracks] = useState<Track[]>([]);
   const [queue, setQueue] = useState<Track[]>([]);
@@ -71,9 +79,29 @@ export default function App() {
   const [isAlbumLoading, setIsAlbumLoading] = useState(false);
 
   // Jam Room Global State
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(() => {
+    return localStorage.getItem("retro_jam_room_id") || null;
+  });
   const [roomInfo, setRoomInfo] = useState<any | null>(null);
-  const [activeRoomPasscode, setActiveRoomPasscode] = useState<string | null>(null);
+  const [activeRoomPasscode, setActiveRoomPasscode] = useState<string | null>(() => {
+    return localStorage.getItem("retro_jam_room_passcode") || null;
+  });
+
+  useEffect(() => {
+    if (activeRoomId) {
+      localStorage.setItem("retro_jam_room_id", activeRoomId);
+    } else {
+      localStorage.removeItem("retro_jam_room_id");
+    }
+  }, [activeRoomId]);
+
+  useEffect(() => {
+    if (activeRoomPasscode) {
+      localStorage.setItem("retro_jam_room_passcode", activeRoomPasscode);
+    } else {
+      localStorage.removeItem("retro_jam_room_passcode");
+    }
+  }, [activeRoomPasscode]);
 
   // Playlist State & Handlers
   const [playlistModalTrack, setPlaylistModalTrack] = useState<Track | null>(null);
@@ -293,9 +321,26 @@ export default function App() {
 
   useEffect(() => {
     if (isPlaying) {
-      playSynthTone(currentTrack.audioUrl, () => {
+      const playPromise = playSynthTone(currentTrack.audioUrl, () => {
         handleNextTrackRef.current();
       });
+      
+      if (playPromise) {
+        playPromise.catch(() => {
+          console.warn("Autoplay blocked on mount or track change. Pausing.");
+          setIsPlaying(false);
+          isInitialMount.current = false;
+        });
+      }
+      if (isInitialMount.current) {
+        const savedTime = localStorage.getItem("retro_last_time");
+        if (savedTime) {
+          setTimeout(() => seekAudio(Number(savedTime)), 50);
+        }
+        isInitialMount.current = false;
+      } else {
+        localStorage.setItem("retro_last_time", "0");
+      }
     } else {
       stopSynthTone();
     }
@@ -512,6 +557,7 @@ export default function App() {
 
   // Playback Control Handlers
   const handlePlayTrack = async (track: Track, skipFirebaseSync: boolean = false) => {
+    initAudio();
     setCurrentTrack(track);
     setIsPlaying(true);
     
@@ -541,6 +587,7 @@ export default function App() {
   };
 
   const handleTogglePlay = () => {
+    initAudio();
     const nextPlaying = !isPlaying;
     setIsPlaying(nextPlaying);
     if (activeRoomId) {
@@ -643,6 +690,7 @@ export default function App() {
   };
 
   const handleNextTrack = async () => {
+    initAudio();
     if (isRepeat) {
       seekAudio(0);
       stopSynthTone();
@@ -687,6 +735,7 @@ export default function App() {
   }, [handleNextTrack]);
 
   const handlePrevTrack = () => {
+    initAudio();
     const currentIndex = trendingTracks.findIndex((t) => t.id === currentTrack.id);
     let prevIndex = currentIndex - 1;
     if (prevIndex < 0) {
