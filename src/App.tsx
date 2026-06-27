@@ -33,6 +33,8 @@ export default function App() {
     localStorage.setItem("retro_theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
+
+
   // Authentication State
   const [user, setUser] = useState<UserProfile | null>(null);
   const [recentlyPlayed, setRecentlyPlayed] = useState<Track[]>([]);
@@ -75,6 +77,64 @@ export default function App() {
 
   // Playlist State & Handlers
   const [playlistModalTrack, setPlaylistModalTrack] = useState<Track | null>(null);
+
+  // Dynamic SEO Title & Meta Description updates for search engines
+  useEffect(() => {
+    let title = "Retro - Brutalist Music Player & Live Jam Together Sharing";
+    let desc = "Retro is a premium, retro-brutalist music streaming player. Search millions of high-quality tracks, create custom playlists, and stream live jam stations synchronously with your friends.";
+    
+    switch (currentScreen) {
+      case Screen.LANDING:
+        title = "Retro - Brutalist Music Player & Live Jam Together Sharing";
+        break;
+      case Screen.NOW_SPINNING:
+        title = `Now Spinning: ${currentTrack ? `${currentTrack.title} - ${currentTrack.artist}` : "Master Console"} | Retro`;
+        desc = "View real-time vinyl playback sweeps, visual frequency beeps, scrolling lyrics transcripts, and your manual playback queue.";
+        break;
+      case Screen.DISCOVER:
+        title = "Discover Music Archives & Trending Albums | Retro";
+        desc = "Explore rare loops, trending tracks, community selections, and custom music archives by genre.";
+        break;
+      case Screen.SEARCH:
+        title = searchQuery ? `Search Results for "${searchQuery}" | Retro` : "Search Music Catalog | Retro";
+        desc = "Index and query high-fidelity songs, artists, and album releases directly from our servers.";
+        break;
+      case Screen.LIKED_MUSIC:
+        title = "Your Liked Collection | Retro";
+        desc = "Play and manage your personal saved tracks, retro loops, and vintage sweep frequency ratings.";
+        break;
+      case Screen.PLAYLIST:
+        title = "Your Custom Playlists | Retro";
+        desc = "Create, custom-title, and load user-defined audio catalogs and streaming queues.";
+        break;
+      case Screen.JAM_TOGETHER:
+        title = activeRoomId ? `Live Jam Studio: ${roomInfo?.roomName || activeRoomId} | Retro` : "Jam Together Synchronized Stations | Retro";
+        desc = "Tune into private streaming vaults, chat live, wave at curators, and sync playback with friends.";
+        break;
+      case Screen.PROFILE:
+        title = `${user ? user.name : "Collector"} Stats & Telemetry | Retro`;
+        desc = "Check your listening history stats, curator levels, total playback minutes, and collector credentials.";
+        break;
+      case Screen.LOGIN:
+        title = "Log In to your Console | Retro";
+        desc = "Access your verified collector profile, sync liked songs, and launch live jam stations.";
+        break;
+      case Screen.REGISTER:
+        title = "Sign Up for a Collector Account | Retro";
+        desc = "Create a new high-fidelity music streaming account and start cataloging your tracks.";
+        break;
+      default:
+        break;
+    }
+    
+    document.title = title;
+    
+    // Update description meta tag dynamically
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", desc);
+    }
+  }, [currentScreen, currentTrack, searchQuery, activeRoomId, roomInfo, user]);
 
   const handleCreatePlaylist = async (name: string, trackToInclude: Track | null = null) => {
     if (!user || !user.uid) return;

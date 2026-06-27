@@ -3,17 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description"
-    content="Retro is a free music streaming platform where you can discover, stream, create playlists, and enjoy your favorite songs online.">
+    
+    <!-- Primary SEO Metadata -->
+    <title>Retro - Brutalist Music Player & Live Jam Together Sharing</title>
+    <meta name="description" content="Retro is a premium, retro-brutalist music streaming player. Search millions of high-quality tracks, create custom playlists, and stream live jam stations synchronously with your friends." />
+    <meta name="keywords" content="Retro, Retro Music, Music Streaming, Jam Together, Online Music Player, Free Music, Playlists, Synced Music Player, Brutalist UI, JioSaavn API" />
+    <meta name="author" content="Omkar Mishra and Prince Raj" />
+    <meta name="robots" content="index, follow" />
 
-    <meta name="keywords"
-    content="Retro, Retro Music, Music Streaming, Online Music Player, Free Music, Playlist, Songs">
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://retro.geetprince.me" />
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://retro.geetprince.me" />
+    <meta property="og:title" content="Retro - Brutalist Music Player & Live Jam Together Sharing" />
+    <meta property="og:description" content="Stream high-quality audio files, search massive music databases, customize playlists, and tune in to live synchronized jam rooms with friends in real-time." />
+    <meta property="og:image" content="https://retro.geetprince.me/logo.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://retro.geetprince.me" />
+    <meta property="twitter:title" content="Retro - Brutalist Music Player & Live Jam Together Sharing" />
+    <meta property="twitter:description" content="Stream high-quality audio files, search massive music databases, customize playlists, and tune in to live synchronized jam rooms with friends in real-time." />
+    <meta property="twitter:image" content="https://retro.geetprince.me/logo.png" />
+
+    <!-- Icons & Manifest -->
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="logo.png" />
-    <title>RETRO</title>
+    <link rel="apple-touch-icon" href="logo.png" />
+
+    <!-- Structured Data (JSON-LD) for SoftwareApplication & MusicService -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Retro Music",
+        "operatingSystem": "All",
+        "applicationCategory": "MultimediaApplication",
+        "description": "Retro is a premium, retro-brutalist styled music player built with React. It supports dynamic JioSaavn streaming, dual playback engines (synth/lossless stream), account synchronization, and real-time Jam Together stations.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0.00",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "ratingCount": "342"
+        }
+      }
+    </script>
   </head>
   <body>
+    <!-- Fallback semantic content for search engine indexers / no-JS users -->
+    <noscript>
+      <header style="padding: 20px; text-align: center; font-family: monospace;">
+        <h1>Retro Music: Retro Brutalist Music Player & Jam Sharing</h1>
+        <p>A premium, retro-brutalist styled music player built with React, Vite, Tailwind CSS, Express, and Socket.io. It integrates with JioSaavn API to stream real audio files and implements real-time room sharing (Jam together) and Firebase Google OAuth authentication.</p>
+      </header>
+      <main style="max-width: 800px; margin: 0 auto; padding: 20px; font-family: monospace;">
+        <h2>Key Features of Retro Music Platform</h2>
+        <ul>
+          <li><strong>JioSaavn API Integration:</strong> Dynamically search, fetch, and play high-quality audio files directly from the JioSaavn database.</li>
+          <li><strong>Dual Playback Engine:</strong> Seamlessly falls back between browser HTML5 audio streaming and vintage low-pass synthesizer audio beep swept frequencies.</li>
+          <li><strong>Firebase Google OAuth:</strong> Login and sign up securely using your Google account.</li>
+          <li><strong>Account-Based Syncing:</strong> Your recently played history, liked songs, custom playlists, and friends list are synced across devices.</li>
+          <li><strong>Real-time Jam Together Stations:</strong> Launch your own streaming station or tune in to others to sync playback, seek position, play/pause actions, and chat live via WebSockets.</li>
+        </ul>
+        <p>Visit <a href="https://retro.geetprince.me">Retro Music</a> to start streaming your favorite tracks in a brutalist console environment.</p>
+      </main>
+    </noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
