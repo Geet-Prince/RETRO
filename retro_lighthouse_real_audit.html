@@ -1,0 +1,247 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.metric{background:var(--surface-1);border-radius:var(--radius);padding:12px 14px;}
+.mlabel{font-size:11px;color:var(--text-muted);margin-bottom:4px;}
+.mval{font-size:21px;font-weight:500;}
+.red{color:#d03b3b;}.amber{color:#c98500;}.green{color:#0ca30c;}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;}
+.card-head{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:0.5px solid var(--border);}
+.sev{font-size:10px;font-weight:500;border-radius:4px;padding:3px 8px;flex-shrink:0;}
+.sev-c{background:#fcebeb;color:#a32d2d;}
+.sev-h{background:#faeeda;color:#633806;}
+.sev-m{background:#eaf3de;color:#27500a;}
+.sev-i{background:#e6f1fb;color:#0c447c;}
+.ctitle{font-size:13px;font-weight:500;color:var(--text-primary);flex:1;}
+.saving{font-size:11px;color:var(--text-muted);flex-shrink:0;}
+.cbody{padding:12px 14px;}
+.cause{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:10px;border-left:2px solid var(--border-strong);padding-left:10px;}
+.fixes{display:flex;flex-direction:column;gap:5px;}
+.fix{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-primary);line-height:1.5;}
+.fix i{color:var(--text-accent);font-size:13px;margin-top:2px;flex-shrink:0;}
+code{font-family:var(--font-mono);font-size:11px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:3px;padding:1px 5px;}
+.sh{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 8px;}
+.data-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.data-row:last-child{border-bottom:none;}
+.data-label{color:var(--text-secondary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.data-val{color:var(--text-primary);font-weight:500;flex-shrink:0;}
+.data-bar{height:4px;border-radius:2px;background:#e24b4a;margin-top:3px;}
+.tag{display:inline-block;font-size:10px;font-weight:500;border-radius:4px;padding:2px 7px;margin-bottom:6px;}
+.tag-perf{background:#faeeda;color:#633806;}
+.tag-acc{background:#fcebeb;color:#a32d2d;}
+.tag-cache{background:#e6f1fb;color:#0c447c;}
+.lcp-bar-wrap{display:flex;gap:2px;align-items:center;margin:10px 0;}
+.lcp-seg{height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;}
+</style>
+
+<h2 class="sr-only">Real Lighthouse audit analysis for retro.geetprince.me — causes and fixes for every performance issue found.</h2>
+
+<div style="padding:1rem 0 0.5rem;">
+
+<div class="grid3">
+  <div class="metric"><div class="mlabel">FCP</div><div class="mval amber">2.6 s</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">target &lt;1.8 s</div></div>
+  <div class="metric"><div class="mlabel">LCP</div><div class="mval red">5.6 s</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">target &lt;2.5 s</div></div>
+  <div class="metric"><div class="mlabel">TBT</div><div class="mval amber">580 ms</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">target &lt;200 ms</div></div>
+  <div class="metric"><div class="mlabel">Time to Interactive</div><div class="mval red">8.9 s</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">target &lt;3.8 s</div></div>
+  <div class="metric"><div class="mlabel">Main thread work</div><div class="mval red">8.2 s</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">script eval: 2.7 s</div></div>
+  <div class="metric"><div class="mlabel">CLS</div><div class="mval green">0</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">✓ perfect</div></div>
+</div>
+
+<p class="sh">LCP breakdown — where those 5.6 s go</p>
+<div class="card" style="margin-bottom:20px;">
+  <div class="cbody">
+    <div class="lcp-bar-wrap">
+      <div class="lcp-seg" style="width:1%;background:#0ca30c;color:white;" title="TTFB 13ms">T</div>
+      <div class="lcp-seg" style="width:61%;background:#e24b4a;color:white;" title="Resource load delay 605ms">Load delay — 605 ms</div>
+      <div class="lcp-seg" style="width:2%;background:#eda100;color:white;" title="Load duration 24ms">L</div>
+      <div class="lcp-seg" style="width:36%;background:#c98500;color:white;" title="Render delay 375ms">Render delay — 375 ms</div>
+    </div>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">The LCP image is at <code>c.saavncdn.com</code> — an album art served from JioSaavn's CDN. 605 ms is wasted before the browser even starts fetching it because it's injected by JS, not in the HTML.</p>
+  </div>
+</div>
+
+<p class="sh">Performance issues</p>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-c">Critical</span>
+    <span class="ctitle">vendor-core.js is causing 18 long tasks (2.1 s total execution)</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Your <code>vendor-core-Dn8JRaNM.js</code> (347 KB) is responsible for most of the 18 long tasks blocking the main thread — 4 tasks of 160–227 ms each all stem from it. This is your bundled React + UI library chunk. It's parsed and executed synchronously, freezing interaction for nearly 9 seconds until TTI.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Split <code>vendor-core</code> further in <code>vite.config.js</code> — separate React itself from your UI component library.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Use dynamic imports for heavy components: <code>const Player = lazy(() => import('./Player'))</code>.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Defer non-critical UI (sidebar, queue) until after initial paint using <code>Suspense</code> boundaries.</div>
+    </div>
+    <div style="margin-top:12px;border-top:0.5px solid var(--border);padding-top:10px;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Long task durations from vendor-core.js</div>
+      <div class="data-row"><span class="data-label">Task at 9197 ms</span><span class="data-val">227 ms</span></div>
+      <div class="data-row"><span class="data-label">Task at 6491 ms</span><span class="data-val">223 ms</span></div>
+      <div class="data-row"><span class="data-label">Task at 6976 ms</span><span class="data-val">201 ms</span></div>
+      <div class="data-row"><span class="data-label">Task at 6814 ms</span><span class="data-val">162 ms</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-c">Critical</span>
+    <span class="ctitle">Google APIs (gapi) blocking for 269 ms — worst single long task</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">The longest single long task (269 ms at 10,379 ms after load start) is from <code>apis.google.com/gapi_iframes</code> — Google's auth iframe script. This is Firebase Authentication loading its cross-origin iframe. It's being loaded synchronously and blocking interaction late into page load.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Defer Firebase Auth initialization — don't call <code>onAuthStateChanged</code> on app start; wait until user interacts.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Load Firebase Auth lazily: <code>const auth = await import('firebase/auth')</code> only when login is needed.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Your <code>vendor-firebase-B-BH3HQM.js</code> is 503 KB — split auth from other Firebase services (Firestore, Storage) using separate dynamic imports.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-c">Critical</span>
+    <span class="ctitle">LCP image not discoverable — resource load delay 605 ms</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">The LCP element is an album art image from <code>c.saavncdn.com</code> — the vinyl label image in your Now Spinning screen. It fails both key checks: it's not in the initial HTML (injected by React after JS runs), and it has no <code>fetchpriority=high</code>. The browser only discovers it after parsing and running your JS bundles.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>fetchpriority="high"</code> to your primary album art <code>&lt;img&gt;</code> tag — this alone will cut LCP significantly.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>&lt;link rel="preconnect" href="https://c.saavncdn.com"&gt;</code> in your HTML <code>&lt;head&gt;</code> so the connection is ready before JS runs.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>If you know the current track on load, preload its image: <code>&lt;link rel="preload" as="image" href="{albumArtUrl}"&gt;</code>.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-h">High</span>
+    <span class="ctitle">Render-blocking: Google Fonts + CSS blocking paint for ~839 ms</span>
+    <span class="saving">Est. save 300 ms</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Two resources block the browser from painting anything: the <code>Space Mono</code> font request to <code>fonts.googleapis.com</code> and your main CSS file. The browser must finish downloading both before it can show any content — this directly causes your 2.6 s FCP.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>rel="preconnect"</code> for Google Fonts and load it with <code>media="print" onload="this.media='all'"</code> to make it non-blocking.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Or self-host Space Mono using <code>fontsource</code>: <code>npm install @fontsource/space-mono</code> and import it directly.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>&lt;link rel="preload" as="style"&gt;</code> for your CSS in <code>index.html</code> so it loads in parallel with JS.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-h">High</span>
+    <span class="ctitle">JioSaavn API has 770 ms server latency</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Your backend <code>jiosavnapi-production.up.railway.app</code> takes 770 ms to respond — nearly 1 second just waiting for data before anything plays. This is a Railway.app cold start issue (free/hobby tier spins down after inactivity) combined with the API being a single-region server.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Upgrade Railway to a paid plan or use an always-on service to prevent cold starts.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Cache API responses in Firestore or localStorage — on revisit, show cached songs instantly while refreshing in background.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add a loading skeleton immediately on mount so the 770 ms feels shorter — perceived performance matters.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-h">High</span>
+    <span class="ctitle">Forced reflow in index.js — 81 ms wasted per occurrence</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Your code at <code>index.js line 4 col 6099</code> and <code>line 3 col 6326</code> is reading layout properties (like <code>offsetHeight</code>, <code>scrollTop</code>, <code>getBoundingClientRect</code>) immediately after writing to the DOM. This forces the browser to recalculate the entire layout synchronously — 81 ms per hit, adding to Style & Layout's 1.27 s total.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Read all layout values first, then batch all DOM writes — never interleave reads and writes.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Use <code>requestAnimationFrame</code> to defer DOM measurements to after paint.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Common culprit in music apps: scrolling the now-playing item into view — wrap in <code>setTimeout(fn, 0)</code>.</div>
+    </div>
+  </div>
+</div>
+
+<p class="sh">Cache and image issues</p>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-h">High</span>
+    <span class="ctitle">Your own JS bundles have only 1-hour cache — waste 482 KiB on every revisit</span>
+    <span class="saving">Est. save 482 KiB</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Firebase Hosting defaults to 1-hour cache (<code>Cache-Control: max-age=3600</code>) for your JS/CSS assets. Since your filenames are already content-hashed (e.g. <code>vendor-core-Dn8JRaNM.js</code>), they're safe to cache for 1 year — but Firebase doesn't know that automatically. Saavn album art images have 0-second cache, re-downloading on every page view.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add this to your <code>firebase.json</code>:
+      </div>
+    </div>
+    <div style="margin-top:8px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);line-height:1.7;">
+"hosting": {<br>
+&nbsp;&nbsp;"headers": [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"source": "/assets/**",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"headers": [{ "key": "Cache-Control",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"value": "public,max-age=31536000,immutable" }]<br>
+&nbsp;&nbsp;}]<br>
+}
+    </div>
+    <div class="fixes" style="margin-top:8px;">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>For album art from <code>saavncdn.com</code>: cache responses in IndexedDB or localStorage with a 24h TTL on your side.</div>
+    </div>
+    <div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:8px;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px;">Biggest cache wastes per revisit</div>
+      <div class="data-row"><span class="data-label">iframe.js (Firebase auth)</span><span class="data-val red">79.9 KB wasted</span></div>
+      <div class="data-row"><span class="data-label">vendor-firebase.js</span><span class="data-val red">78.8 KB wasted</span></div>
+      <div class="data-row"><span class="data-label">All-Black album art (0s cache!)</span><span class="data-val red">76.5 KB wasted</span></div>
+      <div class="data-row"><span class="data-label">vendor-core.js</span><span class="data-val red">68.7 KB wasted</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-h">High</span>
+    <span class="ctitle">7 album art images not optimized — 387 KiB wasted</span>
+    <span class="saving">Est. save 387 KiB</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Album art from <code>saavncdn.com</code> is served as 500×500 JPEG but displayed at ~143×143 px — you're downloading ~12× more pixels than needed. The images are also not being served in WebP/AVIF format despite your app requesting them at display size.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>JioSaavn CDN URLs support size params — request <code>150x150</code> instead of <code>500x500</code> by replacing the size suffix in the URL string.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>loading="lazy"</code> to all album art not in the initial viewport — only the now-playing image should be eager.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>The LCP image specifically — add <code>fetchpriority="high"</code> and keep it eager (no lazy on LCP).</div>
+    </div>
+  </div>
+</div>
+
+<p class="sh">Accessibility issues (also affect SEO score)</p>
+
+<div class="card">
+  <div class="card-head">
+    <span class="sev sev-i">Info</span>
+    <span class="ctitle">Buttons missing accessible names + low contrast text</span>
+  </div>
+  <div class="cbody">
+    <p class="cause">Multiple icon-only buttons (play, skip, like) have no <code>aria-label</code>. Screen readers announce them as "button" with no context. Color contrast on some text elements is also below WCAG AA — likely light gray text on your dark surface.</p>
+    <div class="fixes">
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Add <code>aria-label</code> to every icon button: <code>&lt;button aria-label="Play"&gt;&lt;PlayIcon /&gt;&lt;/button&gt;</code>.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Check contrast of secondary text (artist names, durations) against your background — target 4.5:1 ratio minimum.</div>
+      <div class="fix"><i class="ti ti-check" aria-hidden="true"></i>Fix heading order — an <code>&lt;h4&gt;</code> appears before any <code>&lt;h2&gt;</code> or <code>&lt;h3&gt;</code> in your sidebar.</div>
+    </div>
+  </div>
+</div>
+
+<div style="background:var(--bg-accent);border:0.5px solid var(--border-accent);border-radius:12px;padding:12px 16px;margin-top:4px;">
+  <p style="font-size:12px;font-weight:500;color:var(--text-accent);margin-bottom:6px;">Fix order for maximum score gain</p>
+  <p style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+    1. <strong>Add <code>fetchpriority="high"</code> to LCP image</strong> — 5 min change, biggest LCP gain<br>
+    2. <strong>Fix Google Fonts loading</strong> — remove render block, fixes FCP<br>
+    3. <strong>Fix firebase.json cache headers</strong> — 10 min change, 482 KB saved on revisit<br>
+    4. <strong>Lazy-load Firebase Auth</strong> — remove the 269 ms long task from gapi<br>
+    5. <strong>Replace 500x500 with 150x150 Saavn image URLs</strong> — easy string replace, 387 KB saved<br>
+    6. <strong>Code-split vendor-core.js</strong> — biggest TTI/TBT improvement, most dev effort
+  </p>
+</div>
+
+</div>

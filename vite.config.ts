@@ -35,6 +35,9 @@ export default defineConfig(() => {
               if (id.includes('@google/genai')) {
                 return 'vendor-genai';
               }
+              if (id.includes('react') && !id.includes('lucide-react')) {
+                return 'vendor-react';
+              }
               return 'vendor-core';
             }
           }
