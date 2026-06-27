@@ -219,9 +219,9 @@ export const JamTogetherScreen: React.FC<JamTogetherScreenProps> = ({
           </div>
           <div>
             <span className="text-[10px] text-gray-400 font-bold tracking-widest block">FIRESTORE_CHANNELS</span>
-            <h2 className="text-lg font-black text-text-charcoal uppercase tracking-wider">SECURE JAM PORTAL</h2>
-            <p className="text-[10px] text-gray-500 mt-1 max-w-xs leading-normal">
-              Browse mode disabled for security. Enter a unique station code and passcode to tune in, or launch a new private station.
+            <h2 className="text-lg font-black text-text-charcoal uppercase tracking-wider">JAM TOGETHER</h2>
+            <p className="text-[10px] text-gray-500 mt-1 max-w-sm leading-normal">
+              Listen to music together with friends online in real time. Create a free virtual listening party and sync playback instantly. No account needed to join. Stream Bollywood, Hindi, and Global music together.
             </p>
           </div>
         </div>
