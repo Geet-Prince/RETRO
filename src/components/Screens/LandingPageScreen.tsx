@@ -21,8 +21,8 @@ export const LandingPageScreen: React.FC<LandingPageScreenProps> = ({
         <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center">
           
           {/* Huge overlapping background vinyl disk - Exact hemicircle */}
-          <div className="relative mx-auto w-[120vw] h-[60vw] md:w-[1000px] md:h-[500px] overflow-hidden">
-            <div className="w-[120vw] h-[120vw] md:w-[1000px] md:h-[1000px] absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-black border-[16px] md:border-[20px] border-text-charcoal spinning-slow shadow-2xl">
+          <div className="relative mx-auto w-[120vw] h-[60vw] md:w-[500px] md:h-[250px] overflow-hidden">
+            <div className="w-[120vw] h-[120vw] md:w-[500px] md:h-[500px] absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-black border-[16px] md:border-[20px] border-text-charcoal spinning-slow shadow-2xl">
               
               {/* Vinyl grooved rings */}
               <div className="absolute inset-1 md:inset-2 rounded-full border border-gray-800 opacity-90" />
@@ -46,12 +46,12 @@ export const LandingPageScreen: React.FC<LandingPageScreenProps> = ({
           </div>
 
           {/* Hero text branding */}
-          <div className="relative flex flex-col items-center max-w-3xl pt-6 md:pt-10">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-0 mt-4 md:mt-8">
-              <h1 className="text-[80px] sm:text-[120px] md:text-[180px] leading-[0.8] uppercase tracking-tighter text-text-charcoal font-black italic">
+          <div className="relative flex flex-col items-center max-w-3xl pt-4 md:pt-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-0 mt-2 md:mt-4">
+              <h1 className="text-[80px] sm:text-[120px] md:text-[140px] leading-[0.8] uppercase tracking-tighter text-text-charcoal font-black italic">
                 BUZZ
               </h1>
-              <h1 className="text-[80px] sm:text-[120px] md:text-[180px] leading-[0.8] uppercase tracking-tighter text-text-charcoal font-black">
+              <h1 className="text-[80px] sm:text-[120px] md:text-[140px] leading-[0.8] uppercase tracking-tighter text-text-charcoal font-black">
                 <span className="text-primary italic ml-4">IT</span>
               </h1>
             </div>
