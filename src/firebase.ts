@@ -43,13 +43,8 @@ export async function signInWithGoogle() {
   }
 
   try {
-    if (isMobileOrCapacitor()) {
-      await signInWithRedirect(auth, googleProvider);
-      return null;
-    } else {
-      const result = await signInWithPopup(auth, googleProvider);
-      return result;
-    }
+    const result = await signInWithPopup(auth, googleProvider);
+    return result;
   } catch (error: any) {
     console.error("Firebase Login Error:", error);
     throw error;
