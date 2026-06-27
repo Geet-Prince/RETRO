@@ -1,6 +1,6 @@
-# Music2D: Retro Brutalist Music Streaming with Jam Rooms
+# RETRO: Retro Brutalist Music Streaming with Jam Rooms
 
-Music2D is a premium, retro-brutalist styled music player built with React, Vite, Tailwind CSS, Express, and Socket.io. It integrates with an unofficial JioSaavn API to stream real audio files and implements real-time room sharing (Jam together) and Firebase Google OAuth authentication.
+RETRO is a premium, retro-brutalist styled music player built with React, Vite, Tailwind CSS, Express, and Socket.io. It integrates with an unofficial JioSaavn API to stream real audio files and implements real-time room sharing (Jam together) and Firebase Google OAuth authentication.
 
 ## Features
 
