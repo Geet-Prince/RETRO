@@ -48,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      <aside className={`w-64 border-r border-border-tan flex flex-col justify-between bg-surface h-full select-none font-mono transition-transform duration-300 z-50 
+      <aside className={`w-64 flex-shrink-0 border-r border-border-tan flex flex-col justify-between bg-surface h-full select-none font-mono transition-transform duration-300 z-50 
         fixed inset-y-0 left-0 md:static md:translate-x-0 
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         {/* Top Section */}

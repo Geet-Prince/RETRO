@@ -922,7 +922,7 @@ export default function App() {
         </header>
 
         {/* Public Views content wrapper */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
           <Suspense fallback={<div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-500 bg-surface">LOADING_TERMINAL...</div>}>
             {(currentScreen === Screen.LANDING || (currentScreen !== Screen.LOGIN && currentScreen !== Screen.REGISTER)) && (
               <LandingPageScreen 
@@ -968,7 +968,7 @@ export default function App() {
         />
 
         {/* Core content viewport */}
-        <main className="flex-grow flex flex-col overflow-hidden relative">
+        <main className="flex-grow flex flex-col overflow-hidden relative min-w-0">
           
           {/* Global Tiny header telemetry */}
           <div className="px-4 md:px-6 py-2.5 border-b border-border-tan flex items-center justify-between select-none bg-surface">
@@ -997,7 +997,7 @@ export default function App() {
           </div>
 
           {/* Render Views dynamically */}
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
             <Suspense fallback={<div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-500 bg-surface">LOADING_TERMINAL...</div>}>
               {currentScreen === Screen.NOW_SPINNING && (
                 <NowSpinningScreen 
