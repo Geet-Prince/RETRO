@@ -23,14 +23,7 @@ import { Bell, Settings, Menu, Play, Plus, ListMusic, Compass, Radio, Disc, Hear
 
 export default function App() {
   // Navigation & Theme
-  const [currentScreen, setScreen] = useState<Screen>(() => {
-    const saved = sessionStorage.getItem("retro_screen");
-    return saved ? (saved as Screen) : Screen.LANDING;
-  });
-
-  useEffect(() => {
-    sessionStorage.setItem("retro_screen", currentScreen);
-  }, [currentScreen]);
+  const [currentScreen, setScreen] = useState<Screen>(Screen.NOW_SPINNING);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("retro_theme") === "dark";
   });
