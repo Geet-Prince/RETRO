@@ -232,7 +232,8 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
                 selectedPlaylist.tracks.map((track: Track, idx: number) => (
                   <div
                     key={track.id}
-                    className="flex items-center justify-between p-3 rounded border border-border-tan bg-surface hover:border-primary transition-all brutalist-shadow"
+                    onClick={() => onPlayTrack(track)}
+                    className="flex items-center justify-between p-3 rounded border border-border-tan bg-surface hover:border-primary transition-all brutalist-shadow cursor-pointer group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xs font-black text-gray-400 w-5 text-right">{idx + 1}.</span>
@@ -242,31 +243,31 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
                         className="w-10 h-10 object-cover rounded border border-border-tan flex-shrink-0"
                       />
                       <div className="min-w-0">
-                        <h4 className="text-xs font-black text-text-charcoal truncate">{track.title}</h4>
+                        <h4 className="text-xs font-black text-text-charcoal truncate group-hover:text-primary transition-colors">{track.title}</h4>
                         <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{track.artist}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <span className="text-[10px] text-gray-400 font-bold">{track.duration}</span>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => onPlayTrack(track)}
-                          className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); onPlayTrack(track); }}
+                          className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors hidden lg:block"
                           title="Spin Song"
                         >
-                          <Play className="w-3.5 h-3.5 text-primary" />
+                          <Play className="w-3.5 h-3.5 text-primary hover:text-white" />
                         </button>
                         <button
-                          onClick={() => onAddToQueue(track)}
-                          className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); onAddToQueue(track); }}
+                          className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors"
                           title="Add to queue"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => onTriggerAddToPlaylist(track)}
-                          className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); onTriggerAddToPlaylist(track); }}
+                          className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors"
                           title="Add to another playlist"
                         >
                           <ListMusic className="w-3.5 h-3.5" />

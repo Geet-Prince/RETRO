@@ -101,7 +101,8 @@ export const LikedMusicScreen: React.FC<LikedMusicScreenProps> = ({
               {sortedTracks.map((track) => (
                 <div 
                   key={track.id}
-                  className="group relative flex items-center p-3 bg-surface border border-border-tan rounded hover:border-primary transition-all brutalist-shadow"
+                  onClick={() => onPlayTrack(track)}
+                  className="group relative flex items-center p-3 bg-surface border border-border-tan rounded hover:border-primary transition-all brutalist-shadow cursor-pointer"
                 >
                   {/* CD Jewel Case Mock */}
                   <div className="relative w-16 h-16 rounded border border-gray-400 bg-black overflow-hidden jewel-case flex-shrink-0 flex items-center justify-center mr-3">
@@ -117,7 +118,7 @@ export const LikedMusicScreen: React.FC<LikedMusicScreenProps> = ({
                   </div>
 
                   {/* Text meta details */}
-                  <div className="flex-1 min-w-0 pr-8">
+                  <div className="flex-1 min-w-0 pr-10">
                     <h4 className="text-xs font-bold text-text-charcoal truncate group-hover:text-primary transition-colors">
                       {track.title}
                     </h4>
@@ -130,22 +131,22 @@ export const LikedMusicScreen: React.FC<LikedMusicScreenProps> = ({
                   </div>
 
                   {/* Actions buttons */}
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10">
                     <button 
-                      onClick={() => onPlayTrack(track)}
-                      className="p-1 rounded bg-primary text-white hover:bg-opacity-90 transition-opacity"
+                      onClick={(e) => { e.stopPropagation(); onPlayTrack(track); }}
+                      className="p-1 rounded bg-primary text-white hover:bg-opacity-90 transition-opacity hidden lg:block"
                     >
                       <Play className="w-3 h-3 fill-white" />
                     </button>
                     <button 
-                      onClick={() => onTriggerAddToPlaylist(track)}
+                      onClick={(e) => { e.stopPropagation(); onTriggerAddToPlaylist(track); }}
                       className="p-1 rounded bg-surface border border-border-tan text-text-charcoal hover:bg-primary hover:text-white transition-colors"
                       title="Add to Playlist"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
                     <button 
-                      onClick={() => onToggleLike(track)}
+                      onClick={(e) => { e.stopPropagation(); onToggleLike(track); }}
                       className="p-1 rounded bg-surface border border-border-tan text-primary hover:bg-red-50 hover:text-red-600 transition-colors"
                       title="Remove from Liked"
                     >

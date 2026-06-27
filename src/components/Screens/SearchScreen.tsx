@@ -105,6 +105,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
           {results.map((track) => (
             <div 
               key={track.id}
+              onClick={() => onPlayTrack(track)}
               className="group bg-surface border border-border-tan p-3 rounded hover:border-primary transition-all cursor-pointer brutalist-shadow"
             >
               {/* CD Jewel Case visual */}
