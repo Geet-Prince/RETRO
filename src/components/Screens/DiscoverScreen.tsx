@@ -94,7 +94,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
   const heroTrack = allTracks.find(t => t.id === "track-5") || allTracks[0];
 
   return (
-    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono lg:overflow-hidden h-full">
+    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono lg:overflow-hidden min-h-0">
       {/* Search Header Input bar */}
       <div className="relative w-full" ref={containerRef}>
         <form onSubmit={handleSearchSubmit} className="relative w-full">

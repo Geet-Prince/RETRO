@@ -444,14 +444,7 @@ export default function App() {
     handleRedirect();
   }, []);
 
-  // Authentication Guard: if not logged in, restrict to LANDING/LOGIN/REGISTER
-  useEffect(() => {
-    if (!user) {
-      if (currentScreen !== Screen.LANDING && currentScreen !== Screen.LOGIN && currentScreen !== Screen.REGISTER) {
-        setScreen(Screen.LANDING);
-      }
-    }
-  }, [user, currentScreen]);
+
 
   // Auth Callbacks
   const handleLoginSuccess = (userData: any) => {

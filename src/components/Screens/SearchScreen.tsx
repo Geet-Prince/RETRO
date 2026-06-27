@@ -24,7 +24,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
   onTriggerAddToPlaylist
 }) => {
   return (
-    <div className="flex-1 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide h-full">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 p-6 font-mono overflow-y-auto scrollbar-hide">
       
       {/* Header Breadcrumb */}
       <div className="flex items-center gap-3">

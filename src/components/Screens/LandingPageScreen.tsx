@@ -12,7 +12,7 @@ export const LandingPageScreen: React.FC<LandingPageScreenProps> = ({
   isLoggedIn
 }) => {
   return (
-    <div className="flex-1 flex flex-col font-mono overflow-y-auto overflow-x-hidden scrollbar-hide h-full bg-background relative select-none">
+    <div className="flex-1 flex flex-col font-mono overflow-y-auto overflow-x-hidden scrollbar-hide bg-background relative select-none">
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(200,184,154,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(200,184,154,0.08)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 

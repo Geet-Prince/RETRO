@@ -169,7 +169,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-6 font-mono overflow-y-auto h-full">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-6 font-mono overflow-y-auto">
       {/* Top Header details */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border-tan pb-3 gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
