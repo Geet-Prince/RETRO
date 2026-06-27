@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Build $GITHUB_RUN_ID at $(date)" > public/build-version.txt
       - run: npm ci && npm run build
+      - run: echo "<!-- Build $GITHUB_RUN_ID at $(date) -->" >> dist/index.html
       - uses: FirebaseExtended/action-hosting-deploy@v0.11.0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
