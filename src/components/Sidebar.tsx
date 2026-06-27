@@ -71,11 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <X className="w-4 h-4" />
             </button>
 
-            {/* Status Indicator (Desktop only) */}
-            <div className="hidden md:flex items-center gap-1.5 bg-[#FAF3E0] px-2 py-0.5 border border-border-tan rounded">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-              <span className="text-[9px] font-bold text-primary">LIVE</span>
-            </div>
+
           </div>
 
           {/* Navigation Section */}
