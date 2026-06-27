@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, deleteDoc, getDocs } from "firebase/firestore";
+import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD1B8nNCowQDIKeL4VhP1I8PhG4QGO4X0c",
@@ -19,6 +20,27 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = !isDummy ? getAuth(app) : ({} as any);
 export const googleProvider = new GoogleAuthProvider();
 export const db = !isDummy ? getFirestore(app) : ({} as any);
+
+export let analytics: any = null;
+if (!isDummy) {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }).catch((err) => {
+    console.warn("Firebase Analytics initialization failed:", err);
+  });
+}
+
+export function logAnalyticsEvent(eventName: string, params?: Record<string, any>) {
+  if (analytics) {
+    try {
+      logEvent(analytics, eventName, params);
+    } catch (e) {
+      console.warn("Failed to log analytics event:", e);
+    }
+  }
+}
 
 export { signInWithPopup, signOut };
 

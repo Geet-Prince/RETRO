@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
 import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio, setAudioLoop } from "./utils/audio";
-import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist, checkRedirectResult } from "./firebase";
+import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist, checkRedirectResult, logAnalyticsEvent } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
@@ -273,6 +273,23 @@ export default function App() {
       ].slice(0, 10);
     }
   }, [currentTrack]);
+
+  // Analytics tracking for screen changes
+  useEffect(() => {
+    logAnalyticsEvent("screen_view", { screen_name: currentScreen });
+  }, [currentScreen]);
+
+  // Analytics tracking for song playback
+  useEffect(() => {
+    if (isPlaying && currentTrack) {
+      logAnalyticsEvent("play_track", {
+        track_id: currentTrack.id,
+        track_title: currentTrack.title,
+        track_artist: currentTrack.artist,
+        track_genre: currentTrack.genre || "UNKNOWN"
+      });
+    }
+  }, [isPlaying, currentTrack]);
 
   useEffect(() => {
     if (isPlaying) {
