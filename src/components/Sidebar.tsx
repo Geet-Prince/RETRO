@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-5 border-b border-border-tan flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <h1 className="text-lg font-black tracking-widest text-primary leading-none uppercase animate-retro-glow">RETRO</h1>
+                <h1 className="text-lg font-black tracking-widest leading-none uppercase animate-retro-glow-red">RETRO</h1>
                 <span className="text-[9px] text-gray-500 font-bold block mt-1 tracking-widest">HI-FI ARCHIVE v2.4</span>
               </div>
             </div>

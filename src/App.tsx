@@ -865,7 +865,7 @@ export default function App() {
             className="flex items-center cursor-pointer"
             onClick={() => setScreen(Screen.LANDING)}
           >
-            <span className="text-sm font-black tracking-widest text-primary uppercase animate-retro-glow">
+            <span className="text-sm font-black tracking-widest uppercase animate-retro-glow-red">
               RETRO
             </span>
           </div>
@@ -959,7 +959,7 @@ export default function App() {
           {/* Global Tiny header telemetry */}
           <div className="px-4 md:px-6 py-2.5 border-b border-border-tan flex items-center justify-between select-none bg-surface">
             <div className="flex items-center gap-2">
-              {/* Mobile Sidebar menu is replaced by Bottom Navigation Bar */}
+              <span className="md:hidden font-black italic tracking-widest text-lg animate-retro-glow-red select-none">RETRO</span>
             </div>
             
             <div className="flex items-center gap-4">
