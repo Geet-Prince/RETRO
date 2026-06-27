@@ -85,6 +85,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 placeholder="AXONOMETRIC"
                 value={idCode}
                 onChange={(e) => setIdCode(e.target.value)}
+                autoComplete="username"
                 className="w-full bg-surface border-2 border-border-tan py-2.5 pl-9 pr-3 rounded text-xs font-bold text-text-charcoal focus:outline-none focus:border-primary"
               />
               <LogIn className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -101,6 +102,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 placeholder="••••••••"
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
+                autoComplete="current-password"
                 className="w-full bg-surface border-2 border-border-tan py-2.5 pl-9 pr-3 rounded text-xs font-bold text-text-charcoal focus:outline-none focus:border-primary"
               />
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
