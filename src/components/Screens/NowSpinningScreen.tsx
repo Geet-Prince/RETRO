@@ -169,7 +169,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono lg:overflow-hidden h-full">
+    <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 font-mono overflow-y-auto h-full">
       {/* Top Header details */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border-tan pb-3 gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
@@ -241,7 +241,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
       </div>
 
       {/* Main Content Splitting */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-0 overflow-y-auto lg:overflow-hidden pb-4">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-4">
         {/* Left 7 Columns: Turntable & Wave visualizers */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           <Turntable 
@@ -260,7 +260,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
         </div>
 
         {/* Right 5 Columns: Interactive Multi-Tab Console */}
-        <div className="lg:col-span-5 bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-4 lg:h-full min-h-[400px] lg:min-h-0 overflow-hidden">
+        <div className="lg:col-span-5 bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-4 h-[500px] lg:h-[650px] overflow-hidden">
           {/* Tab Navigation header */}
           <div className="flex border-b-2 border-[#1A1A1A]">
             {(["queue", "liked", "playlist", "search"] as Tab[]).map((tab) => (
