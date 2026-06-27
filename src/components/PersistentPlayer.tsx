@@ -393,6 +393,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             onClick={onPrev}
             className="p-1 hover:text-[#fff9ef] text-gray-400 transition-colors cursor-pointer"
             title="Previous Track"
+            aria-label="Previous Track"
           >
             <SkipBack className="w-4 h-4" />
           </button>
@@ -400,6 +401,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
           <button 
             onClick={togglePlay}
             className="w-8 h-8 rounded bg-[#fff9ef] text-[#1A1A1A] border border-border-tan flex items-center justify-center hover:bg-primary hover:text-[#fff9ef] transition-colors shadow-sm cursor-pointer"
+            aria-label={isPlaying ? "Pause Track" : "Play Track"}
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
           </button>
@@ -408,6 +410,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             onClick={onNext}
             className="p-1 hover:text-[#fff9ef] text-gray-400 transition-colors cursor-pointer"
             title="Next Track"
+            aria-label="Next Track"
           >
             <SkipForward className="w-4 h-4" />
           </button>
@@ -439,6 +442,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             onClick={toggleShuffle}
             className={`p-1 hover:text-primary transition-colors cursor-pointer ${isShuffle ? "text-primary" : "text-gray-400"}`}
             title="Toggle Shuffle"
+            aria-label="Toggle Shuffle"
           >
             <Shuffle className="w-3.5 h-3.5" />
           </button>
@@ -447,33 +451,37 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             onClick={toggleRepeat}
             className={`p-1 hover:text-primary transition-colors cursor-pointer ${isRepeat ? "text-primary" : "text-gray-400"}`}
             title="Toggle Repeat"
+            aria-label="Toggle Repeat"
           >
             <Repeat className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Mobile Playback Controls */}
-      <div className="relative z-10 flex md:hidden items-center gap-3 flex-shrink-0">
+      {/* Mobile Playback Controls (Optimized 44x44px and 40x40px touch targets for mobile audits) */}
+      <div className="relative z-10 flex md:hidden items-center gap-2 flex-shrink-0">
         <button 
           onClick={onPrev}
-          className="p-1 text-gray-400 hover:text-[#fff9ef] transition-colors"
+          className="p-2.5 text-gray-400 hover:text-[#fff9ef] transition-colors cursor-pointer"
           title="Previous Track"
+          aria-label="Previous Track"
         >
           <SkipBack className="w-4 h-4" />
         </button>
 
         <button 
           onClick={togglePlay}
-          className="w-8 h-8 rounded bg-[#fff9ef] text-[#1A1A1A] flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-sm"
+          className="w-11 h-11 rounded bg-[#fff9ef] text-[#1A1A1A] flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-sm cursor-pointer"
+          aria-label={isPlaying ? "Pause Track" : "Play Track"}
         >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+          {isPlaying ? <Pause className="w-5 h-5 text-black fill-black" /> : <Play className="w-5 h-5 text-black fill-black ml-0.5" />}
         </button>
 
         <button 
           onClick={onNext}
-          className="p-1 text-gray-400 hover:text-[#fff9ef] transition-colors"
+          className="p-2.5 text-gray-400 hover:text-[#fff9ef] transition-colors cursor-pointer"
           title="Next Track"
+          aria-label="Next Track"
         >
           <SkipForward className="w-4 h-4" />
         </button>
@@ -487,6 +495,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             onClick={() => setIsMuted(!isMuted)}
             className="text-gray-400 hover:text-primary transition-colors p-1"
             title={isMuted ? "Unmute" : "Mute"}
+            aria-label={isMuted ? "Unmute Volume" : "Mute Volume"}
           >
             {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
@@ -526,6 +535,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
                 : "bg-transparent text-gray-400 border-transparent hover:border-gray-800 hover:text-[#fff9ef]"
             }`}
             title="Scrolled Lyrics"
+            aria-label="Toggle Scrolling Lyrics"
           >
             <AlignLeft className="w-4 h-4" />
           </button>
@@ -541,6 +551,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
                 : "bg-transparent text-gray-400 border-transparent hover:border-gray-800 hover:text-[#fff9ef]"
             }`}
             title="Music Queue"
+            aria-label="Toggle Queue"
           >
             <ListMusic className="w-4 h-4" />
             {queue.length > 0 && (
@@ -560,7 +571,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
               <ListMusic className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-bold uppercase tracking-wider">UPCOMING_QUEUE</h4>
             </div>
-            <button onClick={() => setShowQueue(false)} className="text-gray-400 hover:text-text-charcoal">
+            <button onClick={() => setShowQueue(false)} className="text-gray-400 hover:text-text-charcoal cursor-pointer" aria-label="Close Queue">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -638,7 +649,7 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
               <Sparkles className="w-4 h-4 text-primary animate-pulse" />
               <h4 className="text-xs font-bold uppercase tracking-wider">SCROLLING_LYRICS</h4>
             </div>
-            <button onClick={() => setShowLyrics(false)} className="text-gray-400 hover:text-white">
+            <button onClick={() => setShowLyrics(false)} className="text-gray-400 hover:text-white cursor-pointer" aria-label="Close Lyrics">
               <X className="w-4 h-4" />
             </button>
           </div>

@@ -120,9 +120,9 @@ export const LandingPageScreen: React.FC<LandingPageScreenProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 border-b-4 border-text-charcoal group">
           <div className="p-8 md:p-16 space-y-4 flex flex-col justify-center border-b-4 md:border-b-0 md:border-r-4 border-text-charcoal group-hover:bg-primary transition-colors duration-500">
             <span className="text-[10px] font-bold text-primary tracking-widest group-hover:text-white uppercase">FEATURE_01</span>
-            <h3 className="text-3xl md:text-4xl font-black tracking-tighter text-text-charcoal group-hover:text-white leading-none">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-text-charcoal group-hover:text-white leading-none">
               TACTILE<br />INTERFACE
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-gray-500 font-bold leading-relaxed group-hover:text-white/90">
               Focus on the CD jewel case cards and 3D interactions. Every interaction is designed to feel physical, weighted, and deliberate. Drag, flip, and stack your virtual collection.
             </p>
@@ -164,9 +164,9 @@ export const LandingPageScreen: React.FC<LandingPageScreenProps> = ({
           </div>
           <div className="p-8 md:p-16 space-y-4 flex flex-col justify-center border-b-4 md:border-b-0 md:border-l-4 border-text-charcoal order-1 md:order-2 group-hover:bg-primary transition-colors duration-500">
             <span className="text-[10px] font-bold text-primary tracking-widest group-hover:text-white uppercase">FEATURE_02</span>
-            <h3 className="text-3xl md:text-4xl font-black tracking-tighter text-text-charcoal group-hover:text-white leading-none">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-text-charcoal group-hover:text-white leading-none">
               JAM<br />TOGETHER
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-gray-500 font-bold leading-relaxed group-hover:text-white/90">
               Join collaborative listening rooms and live vinyl spinning sessions. Real-time audio sync for the ultimate curated experience. Community-driven playlists that live and breathe.
             </p>
@@ -185,9 +185,9 @@ export const LandingPageScreen: React.FC<LandingPageScreenProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 border-b-4 border-text-charcoal group">
           <div className="p-8 md:p-16 space-y-4 flex flex-col justify-center border-b-4 md:border-b-0 md:border-r-4 border-text-charcoal group-hover:bg-primary transition-colors duration-500">
             <span className="text-[10px] font-bold text-primary tracking-widest group-hover:text-white uppercase">FEATURE_03</span>
-            <h3 className="text-3xl md:text-4xl font-black tracking-tighter text-text-charcoal group-hover:text-white leading-none">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-text-charcoal group-hover:text-white leading-none">
               LOSSLESS<br />FOCUS
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-gray-500 font-bold leading-relaxed group-hover:text-white/90">
               High-fidelity 24-bit audio streams wrapped in retro-brutalist aesthetics. No compression, no compromise, no distractions. Hear every detail exactly as the artist intended.
             </p>

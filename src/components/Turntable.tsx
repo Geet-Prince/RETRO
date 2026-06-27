@@ -194,16 +194,18 @@ export const Turntable: React.FC<TurntableProps> = ({
       <div className="w-full flex items-center justify-center gap-6">
         <button 
           onClick={toggleShuffle}
-          className={`p-1.5 transition-colors ${isShuffle ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
+          className={`p-2.5 transition-colors cursor-pointer ${isShuffle ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
           title="Shuffle"
+          aria-label="Toggle Shuffle"
         >
           <Shuffle className="w-4 h-4" />
         </button>
 
         <button 
           onClick={onPrev}
-          className="p-1.5 text-text-charcoal hover:text-primary transition-colors"
+          className="p-2.5 text-text-charcoal hover:text-primary transition-colors cursor-pointer"
           title="Previous"
+          aria-label="Previous Track"
         >
           <SkipBack className="w-5 h-5 fill-current" />
         </button>
@@ -211,8 +213,9 @@ export const Turntable: React.FC<TurntableProps> = ({
         {/* Big circular Play/Pause button */}
         <button 
           onClick={togglePlay}
-          className="w-12 h-12 rounded-full bg-primary hover:bg-opacity-95 text-white flex items-center justify-center shadow brutalist-shadow transition-all border-2 border-text-charcoal"
+          className="w-12 h-12 rounded-full bg-primary hover:bg-opacity-95 text-white flex items-center justify-center shadow brutalist-shadow transition-all border-2 border-text-charcoal cursor-pointer"
           title={isPlaying ? "Pause" : "Play"}
+          aria-label={isPlaying ? "Pause Track" : "Play Track"}
         >
           {isPlaying ? (
             <Pause className="w-5 h-5 fill-white text-white" />
@@ -223,16 +226,18 @@ export const Turntable: React.FC<TurntableProps> = ({
 
         <button 
           onClick={onNext}
-          className="p-1.5 text-text-charcoal hover:text-primary transition-colors"
+          className="p-2.5 text-text-charcoal hover:text-primary transition-colors cursor-pointer"
           title="Next"
+          aria-label="Next Track"
         >
           <SkipForward className="w-5 h-5 fill-current" />
         </button>
 
         <button 
           onClick={toggleRepeat}
-          className={`p-1.5 transition-colors ${isRepeat ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
+          className={`p-2.5 transition-colors cursor-pointer ${isRepeat ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
           title="Repeat"
+          aria-label="Toggle Repeat"
         >
           <Repeat className="w-4 h-4" />
         </button>

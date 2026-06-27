@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
 import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio, setAudioLoop } from "./utils/audio";
@@ -7,19 +7,19 @@ import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJa
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
 
-// Screen Components
-import { LandingPageScreen } from "./components/Screens/LandingPageScreen";
-import { NowSpinningScreen } from "./components/Screens/NowSpinningScreen";
-import { DiscoverScreen } from "./components/Screens/DiscoverScreen";
-import { SearchScreen } from "./components/Screens/SearchScreen";
-import { LikedMusicScreen } from "./components/Screens/LikedMusicScreen";
-import { PlaylistScreen } from "./components/Screens/PlaylistScreen";
-import { JamTogetherScreen } from "./components/Screens/JamTogetherScreen";
-import { ProfileScreen } from "./components/Screens/ProfileScreen";
-import { LoginScreen } from "./components/Screens/LoginScreen";
-import { RegisterScreen } from "./components/Screens/RegisterScreen";
+// Lazy-loaded Screen Components for Code Splitting (Optimizes initial bundle size, FCP, and LCP)
+const LandingPageScreen = lazy(() => import("./components/Screens/LandingPageScreen").then(m => ({ default: m.LandingPageScreen })));
+const NowSpinningScreen = lazy(() => import("./components/Screens/NowSpinningScreen").then(m => ({ default: m.NowSpinningScreen })));
+const DiscoverScreen = lazy(() => import("./components/Screens/DiscoverScreen").then(m => ({ default: m.DiscoverScreen })));
+const SearchScreen = lazy(() => import("./components/Screens/SearchScreen").then(m => ({ default: m.SearchScreen })));
+const LikedMusicScreen = lazy(() => import("./components/Screens/LikedMusicScreen").then(m => ({ default: m.LikedMusicScreen })));
+const PlaylistScreen = lazy(() => import("./components/Screens/PlaylistScreen").then(m => ({ default: m.PlaylistScreen })));
+const JamTogetherScreen = lazy(() => import("./components/Screens/JamTogetherScreen").then(m => ({ default: m.JamTogetherScreen })));
+const ProfileScreen = lazy(() => import("./components/Screens/ProfileScreen").then(m => ({ default: m.ProfileScreen })));
+const LoginScreen = lazy(() => import("./components/Screens/LoginScreen").then(m => ({ default: m.LoginScreen })));
+const RegisterScreen = lazy(() => import("./components/Screens/RegisterScreen").then(m => ({ default: m.RegisterScreen })));
 
-import { Bell, Settings, Menu, Play, Plus, ListMusic } from "lucide-react";
+import { Bell, Settings, Menu, Play, Plus, ListMusic, Compass, Radio, Disc, Heart, User } from "lucide-react";
 
 export default function App() {
   // Navigation & Theme
@@ -916,24 +916,26 @@ export default function App() {
 
         {/* Public Views content wrapper */}
         <div className="flex-1 overflow-hidden relative">
-          {currentScreen === Screen.LANDING && (
-            <LandingPageScreen 
-              setScreen={setScreen}
-              isLoggedIn={false}
-            />
-          )}
-          {currentScreen === Screen.LOGIN && (
-            <LoginScreen 
-              onLoginSuccess={handleLoginSuccess}
-              onGoToRegister={() => setScreen(Screen.REGISTER)}
-            />
-          )}
-          {currentScreen === Screen.REGISTER && (
-            <RegisterScreen 
-              onRegisterSuccess={handleRegisterSuccess}
-              onGoToLogin={() => setScreen(Screen.LOGIN)}
-            />
-          )}
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-500 bg-surface">LOADING_TERMINAL...</div>}>
+            {currentScreen === Screen.LANDING && (
+              <LandingPageScreen 
+                setScreen={setScreen}
+                isLoggedIn={false}
+              />
+            )}
+            {currentScreen === Screen.LOGIN && (
+              <LoginScreen 
+                onLoginSuccess={handleLoginSuccess}
+                onGoToRegister={() => setScreen(Screen.REGISTER)}
+              />
+            )}
+            {currentScreen === Screen.REGISTER && (
+              <RegisterScreen 
+                onRegisterSuccess={handleRegisterSuccess}
+                onGoToLogin={() => setScreen(Screen.LOGIN)}
+              />
+            )}
+          </Suspense>
         </div>
       </div>
     );
@@ -964,13 +966,7 @@ export default function App() {
           {/* Global Tiny header telemetry */}
           <div className="px-4 md:px-6 py-2.5 border-b border-border-tan flex items-center justify-between select-none bg-surface">
             <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="md:hidden p-1 text-gray-500 hover:text-primary transition-colors cursor-pointer"
-                title="Open Navigation"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+              {/* Mobile Sidebar menu is replaced by Bottom Navigation Bar */}
             </div>
             
             <div className="flex items-center gap-4">
@@ -995,97 +991,102 @@ export default function App() {
 
           {/* Render Views dynamically */}
           <div className="flex-1 overflow-hidden relative">
-            {currentScreen === Screen.NOW_SPINNING && (
-              <NowSpinningScreen 
-                currentTrack={currentTrack}
-                isPlaying={isPlaying}
-                togglePlay={handleTogglePlay}
-                allTracks={trendingTracks}
-                onPlayTrack={handlePlayTrack}
-                onNext={handleNextTrack}
-                onPrev={handlePrevTrack}
-                queue={queue}
-                removeFromQueue={handleRemoveFromQueue}
-                likedTracks={likedTracks}
-                onToggleLike={handleToggleLike}
-                playlists={playlists}
-                onAddToQueue={handleAddToQueue}
-                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
-                onPlayPlaylist={handlePlayPlaylist}
-                isRepeat={isRepeat}
-                toggleRepeat={() => setIsRepeat(!isRepeat)}
-                isShuffle={isShuffle}
-                toggleShuffle={() => setIsShuffle(!isShuffle)}
-                autoplayQueue={autoplayQueue}
-              />
-            )}
-            {currentScreen === Screen.DISCOVER && (
-              <DiscoverScreen 
-                allTracks={trendingTracks}
-                trendingAlbums={trendingAlbums}
-                onPlayTrack={handlePlayTrack}
-                onAddToQueue={handleAddToQueue}
-                onSelectGenre={handleSearchExecute}
-                onSearch={handleSearchExecute}
-                onOpenAlbum={handleOpenAlbum}
-                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
-              />
-            )}
-            {currentScreen === Screen.SEARCH && (
-              <SearchScreen 
-                query={searchQuery}
-                results={searchResults}
-                albumResults={albumResults}
-                onPlayTrack={handlePlayTrack}
-                onAddToQueue={handleAddToQueue}
-                onClearSearch={handleClearSearch}
-                onOpenAlbum={handleOpenAlbum}
-                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
-              />
-            )}
-            {currentScreen === Screen.LIKED_MUSIC && (
-              <LikedMusicScreen 
-                likedTrackIds={likedTrackIds}
-                allTracks={likedTracks}
-                onPlayTrack={handlePlayTrack}
-                onShuffleAll={handleShuffleAllLiked}
-                onToggleLike={handleToggleLike}
-                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
-              />
-            )}
-            {currentScreen === Screen.PLAYLIST && (
-              <PlaylistScreen 
-                playlists={playlists}
-                onPlayTrack={handlePlayTrack}
-                onAddToQueue={handleAddToQueue}
-                onPlayPlaylist={handlePlayPlaylist}
-                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
-                user={user}
-                onCreatePlaylist={(name) => handleCreatePlaylist(name)}
-              />
-            )}
-            {currentScreen === Screen.JAM_TOGETHER && (
-              <JamTogetherScreen 
-                onPlayTrack={handlePlayTrack}
-                allTracks={trendingTracks}
-                user={user}
-                currentTrack={currentTrack}
-                isPlaying={isPlaying}
-                setIsPlaying={setIsPlaying}
-                setCurrentTrack={setCurrentTrack}
-                activeRoomId={activeRoomId}
-                setActiveRoomId={setActiveRoomId}
-                roomInfo={roomInfo}
-                setActiveRoomPasscode={setActiveRoomPasscode}
-                onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
-              />
-            )}
-            {currentScreen === Screen.PROFILE && (
-              <ProfileScreen 
-                user={user}
-                onShareID={handleShareID}
-              />
-            )}
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center font-mono text-xs text-gray-500 bg-surface">LOADING_TERMINAL...</div>}>
+              {currentScreen === Screen.NOW_SPINNING && (
+                <NowSpinningScreen 
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  togglePlay={handleTogglePlay}
+                  allTracks={trendingTracks}
+                  onPlayTrack={handlePlayTrack}
+                  onNext={handleNextTrack}
+                  onPrev={handlePrevTrack}
+                  queue={queue}
+                  removeFromQueue={handleRemoveFromQueue}
+                  likedTracks={likedTracks}
+                  onToggleLike={handleToggleLike}
+                  playlists={playlists}
+                  onAddToQueue={handleAddToQueue}
+                  onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                  onPlayPlaylist={handlePlayPlaylist}
+                  isRepeat={isRepeat}
+                  toggleRepeat={() => setIsRepeat(!isRepeat)}
+                  isShuffle={isShuffle}
+                  toggleShuffle={() => setIsShuffle(!isShuffle)}
+                  autoplayQueue={autoplayQueue}
+                />
+              )}
+              {currentScreen === Screen.DISCOVER && (
+                <DiscoverScreen 
+                  allTracks={trendingTracks}
+                  trendingAlbums={trendingAlbums}
+                  onPlayTrack={handlePlayTrack}
+                  onAddToQueue={handleAddToQueue}
+                  onSelectGenre={handleSearchExecute}
+                  onSearch={handleSearchExecute}
+                  onOpenAlbum={handleOpenAlbum}
+                  onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                />
+              )}
+              {currentScreen === Screen.SEARCH && (
+                <SearchScreen 
+                  query={searchQuery}
+                  results={searchResults}
+                  albumResults={albumResults}
+                  onPlayTrack={handlePlayTrack}
+                  onAddToQueue={handleAddToQueue}
+                  onClearSearch={handleClearSearch}
+                  onOpenAlbum={handleOpenAlbum}
+                  onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                />
+              )}
+              {currentScreen === Screen.LIKED_MUSIC && (
+                <LikedMusicScreen 
+                  likedTrackIds={likedTrackIds}
+                  allTracks={likedTracks}
+                  onPlayTrack={handlePlayTrack}
+                  onShuffleAll={handleShuffleAllLiked}
+                  onToggleLike={handleToggleLike}
+                  onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                />
+              )}
+              {currentScreen === Screen.PLAYLIST && (
+                <PlaylistScreen 
+                  playlists={playlists}
+                  onPlayTrack={handlePlayTrack}
+                  onAddToQueue={handleAddToQueue}
+                  onPlayPlaylist={handlePlayPlaylist}
+                  onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                  user={user}
+                  onCreatePlaylist={(name) => handleCreatePlaylist(name)}
+                />
+              )}
+              {currentScreen === Screen.JAM_TOGETHER && (
+                <JamTogetherScreen 
+                  onPlayTrack={handlePlayTrack}
+                  allTracks={trendingTracks}
+                  user={user}
+                  currentTrack={currentTrack}
+                  isPlaying={isPlaying}
+                  setIsPlaying={setIsPlaying}
+                  setCurrentTrack={setCurrentTrack}
+                  activeRoomId={activeRoomId}
+                  setActiveRoomId={setActiveRoomId}
+                  roomInfo={roomInfo}
+                  setActiveRoomPasscode={setActiveRoomPasscode}
+                  onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
+                />
+              )}
+              {currentScreen === Screen.PROFILE && (
+                <ProfileScreen 
+                  user={user}
+                  onShareID={handleShareID}
+                  isDarkMode={isDarkMode}
+                  toggleTheme={() => setIsDarkMode(!isDarkMode)}
+                  logout={handleLogout}
+                />
+              )}
+            </Suspense>
           </div>
         </main>
       </div>
@@ -1106,6 +1107,37 @@ export default function App() {
         onRedirectToNowSpinning={() => setScreen(Screen.NOW_SPINNING)}
         autoplayQueue={autoplayQueue}
       />
+
+      {/* Bottom Navigation Bar for Mobile Devices */}
+      <nav className="md:hidden w-full bg-surface border-t-2 border-border-tan h-16 flex items-center justify-around font-mono z-40 select-none flex-shrink-0">
+        {[
+          { screen: Screen.DISCOVER, label: "DISCOVER", icon: Compass },
+          { screen: Screen.JAM_TOGETHER, label: "JAM ROOM", icon: Radio, badge: true },
+          { screen: Screen.NOW_SPINNING, label: "SPINNING", icon: Disc },
+          { screen: Screen.LIKED_MUSIC, label: "LIKED", icon: Heart },
+          { screen: Screen.PROFILE, label: "PROFILE", icon: User }
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = currentScreen === item.screen;
+          return (
+            <button
+              key={item.screen}
+              onClick={() => setScreen(item.screen)}
+              className={`flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative ${
+                isActive 
+                  ? "text-primary dark:text-primary-fixed" 
+                  : "text-gray-500 hover:text-text-charcoal"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[8px] font-black tracking-tight">{item.label}</span>
+              {item.badge && item.screen === Screen.JAM_TOGETHER && (
+                <span className="absolute top-2 right-4 w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Global Album Details Modal */}
       {activeAlbumDetails && (
@@ -1229,7 +1261,7 @@ export default function App() {
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <img 
-                          src={pl.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17"} 
+                          src={pl.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=150&q=75"} 
                           alt="Cover" 
                           className="w-9 h-9 object-cover rounded border border-border-tan flex-shrink-0"
                         />

@@ -295,7 +295,7 @@ export async function addPlaylist(uid: string, name: string, coverUrl: string, t
     const newPlaylist = {
       id: `playlist-${Date.now()}`,
       name,
-      coverUrl: coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17",
+      coverUrl: coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=200&q=75",
       tracks: tracks || []
     };
 
@@ -328,7 +328,7 @@ export async function addPlaylist(uid: string, name: string, coverUrl: string, t
     const newPlaylist = {
       id: `playlist-${Date.now()}`,
       name,
-      coverUrl: coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17",
+      coverUrl: coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=200&q=75",
       tracks: tracks || []
     };
     playlists.push(newPlaylist);

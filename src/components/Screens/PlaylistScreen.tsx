@@ -128,7 +128,7 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
                   {/* CD Jewel Case Cover */}
                   <div className="relative w-full aspect-square bg-black rounded border border-gray-400 overflow-hidden jewel-case mb-3 flex items-center justify-center">
                     <img 
-                      src={pl.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17"} 
+                      src={pl.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=250&q=75"} 
                       alt={pl.name} 
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover rounded-xs"
@@ -185,7 +185,7 @@ export const PlaylistScreen: React.FC<PlaylistScreenProps> = ({
           <div className="lg:col-span-4 bg-[#FAF3E0] border-2 border-[#1A1A1A] p-4 rounded-lg brutalist-shadow flex flex-col gap-4">
             <div className="relative w-full aspect-square bg-black rounded border border-gray-400 overflow-hidden jewel-case flex items-center justify-center">
               <img 
-                src={selectedPlaylist.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17"} 
+                src={selectedPlaylist.coverUrl || "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=300&q=75"} 
                 alt={selectedPlaylist.name} 
                 className="w-full h-full object-cover rounded-xs"
               />

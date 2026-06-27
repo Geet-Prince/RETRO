@@ -6,11 +6,17 @@ import { Award, ShieldAlert, Share2, Plus, ArrowUpRight, Zap } from "lucide-reac
 interface ProfileScreenProps {
   user: UserProfile | null;
   onShareID: () => void;
+  isDarkMode?: boolean;
+  toggleTheme?: () => void;
+  logout?: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   user,
-  onShareID
+  onShareID,
+  isDarkMode,
+  toggleTheme,
+  logout
 }) => {
   // Tilt angles for the 3D Membership card
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -274,6 +280,31 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <p className="text-[9px] text-gray-500 leading-relaxed">
               Maintain turntable direct-drive quartz locks clean. A 3% pitch fader adjustment can enhance warm tape-hiss lo-fi harmonics on older pressings.
             </p>
+          </div>
+
+          {/* Mobile-only Action Bar (Theme + Logout) */}
+          <div className="flex flex-col gap-3 md:hidden border-t border-border-tan pt-4 mt-2">
+            <h3 className="text-xs font-bold text-text-charcoal uppercase tracking-widest">
+              SYSTEM_CONTROLS
+            </h3>
+            <div className="flex gap-2">
+              {toggleTheme && (
+                <button 
+                  onClick={toggleTheme}
+                  className="flex-1 bg-surface border border-border-tan hover:bg-surface-container py-2.5 px-3 rounded text-[10px] font-bold text-text-charcoal flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>THEME: {isDarkMode ? "DARK" : "WARM"}</span>
+                </button>
+              )}
+              {logout && (
+                <button 
+                  onClick={logout}
+                  className="flex-1 bg-[#FFEAEA] border border-red-200 hover:bg-red-100 py-2.5 px-3 rounded text-[10px] font-bold text-red-700 text-center cursor-pointer"
+                >
+                  LOGOUT
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
