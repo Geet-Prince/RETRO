@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
 import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio, setAudioLoop, initAudio } from "./utils/audio";
-import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist, checkRedirectResult, logAnalyticsEvent } from "./firebase";
+import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist, checkRedirectResult, logAnalyticsEvent, auth, onAuthStateChanged, syncUserProfile, signOut } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
@@ -472,8 +472,9 @@ export default function App() {
 
   // Note: Firestore Jam Room cleanup is now handled efficiently on the backend server via real-time listeners.
 
-  // Restore User Session on mount
+  // Restore User Session on mount and listen to Firebase Auth
   useEffect(() => {
+    // 1. Fast path: load local cache immediately for instant UI
     const savedSession = localStorage.getItem("retro_user_session");
     if (savedSession) {
       try {
@@ -484,11 +485,44 @@ export default function App() {
         setRecentlyPlayed(userData.recentlyPlayed || []);
         setPlaylists(userData.playlists || []);
         setFriends(userData.friends || []);
-        setScreen(Screen.NOW_SPINNING);
+        if (userData.profile) {
+          setScreen(Screen.NOW_SPINNING);
+        }
       } catch (e) {
-        console.warn("Failed to restore user session", e);
+        console.warn("Failed to restore user session cache", e);
       }
     }
+
+    // 2. Reliable path: Subscribe to Firebase Auth to handle fresh logins,
+    // cross-device syncing, and proper database fetching.
+    if (!auth || !auth.onAuthStateChanged) return;
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Fetch the freshest data from Firestore to sync across devices!
+          const freshData = await syncUserProfile(
+            firebaseUser.uid,
+            firebaseUser.displayName || firebaseUser.email || "Curator",
+            firebaseUser.email || "",
+            firebaseUser.photoURL || undefined
+          );
+          if (freshData) {
+            setUser(freshData.profile);
+            setLikedTrackIds(freshData.likedTrackIds || []);
+            setLikedTracks(freshData.likedTracks || []);
+            setRecentlyPlayed(freshData.recentlyPlayed || []);
+            setPlaylists(freshData.playlists || []);
+            setFriends(freshData.friends || []);
+            localStorage.setItem("retro_user_session", JSON.stringify(freshData));
+            setScreen(Screen.NOW_SPINNING);
+          }
+        } catch (error) {
+          console.error("Failed to sync fresh user data from database:", error);
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Handle redirect sign-in result (needed for mobile/Capacitor redirect logins)
@@ -537,7 +571,7 @@ export default function App() {
     setScreen(Screen.NOW_SPINNING);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (activeRoomId && user) {
       leaveJamRoom(activeRoomId, user.uid || "guest", user.name);
     }
@@ -553,6 +587,15 @@ export default function App() {
     stopSynthTone();
     setIsPlaying(false);
     localStorage.removeItem("retro_user_session");
+    
+    // Clear Firebase session too
+    try {
+      if (auth) {
+        await signOut(auth);
+      }
+    } catch (err) {
+      console.warn("Failed to sign out from Firebase:", err);
+    }
   };
 
   // Playback Control Handlers

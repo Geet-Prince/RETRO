@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UserPlus, Mail, Key, User, ShieldCheck } from "lucide-react";
-import { signInWithGoogle, syncUserProfile } from "../../firebase";
+import { signInWithGoogle, syncUserProfile, registerWithEmail } from "../../firebase";
 
 interface RegisterScreenProps {
   onRegisterSuccess: (userData: any) => void;
@@ -41,18 +41,30 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
     setIsLoading(true);
     try {
+      // 1. Create user in Firebase Authentication
+      const result = await registerWithEmail(email.trim(), passkey);
+      const uid = result.user.uid;
+      
+      // 2. Create user profile in Firestore
       const data = await syncUserProfile(
-        `credentials-${name.trim().toLowerCase()}`,
+        uid,
         name.trim(),
         email.trim()
       );
+      
       if (data) {
         onRegisterSuccess(data);
       } else {
         setError("BACKEND_SYNC_FAILED");
       }
     } catch (err: any) {
-      setError("DATABASE_OFFLINE_OR_FAILED");
+      if (err.code === 'auth/email-already-in-use') {
+        setError("EMAIL_ALREADY_EXISTS");
+      } else if (err.code === 'auth/weak-password') {
+        setError("PASSKEY_TOO_WEAK");
+      } else {
+        setError("DATABASE_OFFLINE_OR_FAILED");
+      }
       console.error(err);
     } finally {
       setIsLoading(false);

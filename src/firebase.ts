@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, deleteDoc, getDocs } from "firebase/firestore";
 import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 
@@ -42,7 +42,7 @@ export function logAnalyticsEvent(eventName: string, params?: Record<string, any
   }
 }
 
-export { signInWithPopup, signOut };
+export { signInWithPopup, signOut, onAuthStateChanged };
 
 // Detect if running on mobile device or Capacitor
 export function isMobileOrCapacitor() {
@@ -67,6 +67,26 @@ export async function signInWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result;
+  } catch (error: any) {
+    console.error("Firebase Login Error:", error);
+    throw error;
+  }
+}
+
+export async function registerWithEmail(email: string, passkey: string) {
+  if (isDummy) return { user: { uid: `dummy-${email}` } } as any;
+  try {
+    return await createUserWithEmailAndPassword(auth, email, passkey);
+  } catch (error: any) {
+    console.error("Firebase Register Error:", error);
+    throw error;
+  }
+}
+
+export async function loginWithEmail(email: string, passkey: string) {
+  if (isDummy) return { user: { uid: `dummy-${email}` } } as any;
+  try {
+    return await signInWithEmailAndPassword(auth, email, passkey);
   } catch (error: any) {
     console.error("Firebase Login Error:", error);
     throw error;

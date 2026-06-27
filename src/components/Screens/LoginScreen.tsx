@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { LogIn, Key, Sparkles, Terminal } from "lucide-react";
-import { signInWithGoogle, syncUserProfile } from "../../firebase";
+import { signInWithGoogle, syncUserProfile, loginWithEmail } from "../../firebase";
 
 interface LoginScreenProps {
   onLoginSuccess: (userData: any) => void;
@@ -31,18 +31,36 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     setIsLoading(true);
     try {
+      let loginEmail = idCode.trim();
+      // If they type a username instead of an email, we can't easily look up their email 
+      // without a custom backend. Encourage them to use email if it fails.
+      if (!loginEmail.includes("@")) {
+        // Fallback for old mock accounts
+        loginEmail = `${loginEmail.toLowerCase()}@retro.music`;
+      }
+      
+      // 1. Authenticate with Firebase
+      const result = await loginWithEmail(loginEmail, passkey);
+      const uid = result.user.uid;
+      
+      // 2. Fetch profile from Firestore
       const data = await syncUserProfile(
-        `credentials-${idCode.trim().toLowerCase()}`,
-        idCode.trim(),
-        `${idCode.trim().toLowerCase()}@retro.music`
+        uid,
+        idCode.trim(), // Name isn't strictly needed for fetch, but required by syncUserProfile signature
+        loginEmail
       );
+      
       if (data) {
         onLoginSuccess(data);
       } else {
         setError("BACKEND_SYNC_FAILED");
       }
     } catch (err: any) {
-      setError("DATABASE_OFFLINE_OR_FAILED");
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        setError("INVALID_CREDENTIALS_OR_NOT_FOUND");
+      } else {
+        setError("DATABASE_OFFLINE_OR_FAILED");
+      }
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -77,12 +95,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
-              COLLECTOR ID / USERNAME
+              COLLECTOR EMAIL / USERNAME
             </label>
             <div className="relative">
               <input 
                 type="text"
-                placeholder="AXONOMETRIC"
+                placeholder="collector@archive.net"
                 value={idCode}
                 onChange={(e) => setIdCode(e.target.value)}
                 autoComplete="username"
