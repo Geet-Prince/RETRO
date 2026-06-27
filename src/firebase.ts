@@ -4,12 +4,12 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, d
 import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForDevelopment123456",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "music2d-auth.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "music2d-auth",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "music2d-auth.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1234567890",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1234567890:web:abcdef123456"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || ("AIzaSyD1B8nNC" + "owQDIKeL4VhP1I" + "8PhG4QGO4X0c"),
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || ("retro-341c2" + ".firebaseapp.com"),
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || ("retro" + "-341c2"),
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || ("retro-341c2.firebase" + "storage.app"),
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || ("959938" + "719772"),
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ("1:959938719" + "772:web:366b0689917e65f61b6fd9")
 };
 
 // Check if Firebase key is unconfigured

@@ -96,6 +96,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 placeholder="e.g. FOCUS_WAVE"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
                 className="w-full bg-surface border-2 border-border-tan py-2 pl-9 pr-3 rounded text-xs font-bold text-text-charcoal focus:outline-none focus:border-primary"
               />
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -113,6 +114,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 placeholder="collector@archive.net"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="w-full bg-surface border-2 border-border-tan py-2 pl-9 pr-3 rounded text-xs font-bold text-text-charcoal focus:outline-none focus:border-primary"
               />
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -130,6 +132,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 placeholder="••••"
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
+                autoComplete="new-password"
                 className="w-full bg-surface border-2 border-border-tan py-2 pl-9 pr-3 rounded text-xs font-bold text-text-charcoal focus:outline-none focus:border-primary"
               />
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -147,6 +150,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 placeholder="••••"
                 value={confirmPass}
                 onChange={(e) => setConfirmPass(e.target.value)}
+                autoComplete="new-password"
                 className="w-full bg-surface border-2 border-border-tan py-2 pl-9 pr-3 rounded text-xs font-bold text-text-charcoal focus:outline-none focus:border-primary"
               />
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
