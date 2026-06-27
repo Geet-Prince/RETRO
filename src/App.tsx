@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Screen, Track, UserProfile } from "./types";
 import { MOCK_TRACKS, MOCK_PROFILE } from "./data";
-import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio } from "./utils/audio";
-import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist } from "./firebase";
+import { playSynthTone, stopSynthTone, updateSynthFrequency, getAudioCurrentTime, seekAudio, setAudioLoop } from "./utils/audio";
+import { toggleLikeTrack, addRecentlyPlayed, joinJamRoom, leaveJamRoom, updateJamRoomTrack, addPlaylist, addTrackToPlaylist, checkRedirectResult } from "./firebase";
 
 import { Sidebar } from "./components/Sidebar";
 import { PersistentPlayer } from "./components/PersistentPlayer";
@@ -24,8 +24,14 @@ import { Bell, Settings, Menu, Play, Plus, ListMusic } from "lucide-react";
 export default function App() {
   // Navigation & Theme
   const [currentScreen, setScreen] = useState<Screen>(Screen.LANDING);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem("retro_theme") === "dark";
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem("retro_theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
 
   // Authentication State
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -52,6 +58,7 @@ export default function App() {
   const [queue, setQueue] = useState<Track[]>([]);
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
   const [isRepeat, setIsRepeat] = useState<boolean>(false);
+  const [autoplayQueue, setAutoplayQueue] = useState<Track[]>([]);
 
   // Search Results State
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -196,6 +203,16 @@ export default function App() {
 
   // Sound Synth Side-Effects
   const handleNextTrackRef = React.useRef<() => void>(() => {});
+  const playedHistoryRef = React.useRef<string[]>([]);
+
+  useEffect(() => {
+    if (currentTrack && currentTrack.id) {
+      playedHistoryRef.current = [
+        currentTrack.id,
+        ...playedHistoryRef.current.filter(id => id !== currentTrack.id)
+      ].slice(0, 10);
+    }
+  }, [currentTrack]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -212,6 +229,26 @@ export default function App() {
       updateSynthFrequency(currentTrack.audioUrl);
     }
   }, [currentTrack]);
+
+  // Dynamically prepare 5 upcoming flow tracks when currentTrack changes
+  useEffect(() => {
+    if (!currentTrack) return;
+    let active = true;
+    const fetchAutoplay = async () => {
+      const tracks = await findFlowTracks(currentTrack, 5);
+      if (active) {
+        setAutoplayQueue(tracks);
+      }
+    };
+    fetchAutoplay();
+    return () => {
+      active = false;
+    };
+  }, [currentTrack]);
+
+  useEffect(() => {
+    setAudioLoop(isRepeat);
+  }, [isRepeat]);
 
   // Clean-up on unmount
   useEffect(() => {
@@ -332,6 +369,21 @@ export default function App() {
     }
   }, []);
 
+  // Handle redirect sign-in result (needed for mobile/Capacitor redirect logins)
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        const data = await checkRedirectResult();
+        if (data) {
+          handleLoginSuccess(data);
+        }
+      } catch (error) {
+        console.error("Redirect login check failed:", error);
+      }
+    };
+    handleRedirect();
+  }, []);
+
   // Authentication Guard: if not logged in, restrict to LANDING/LOGIN/REGISTER
   useEffect(() => {
     if (!user) {
@@ -426,7 +478,111 @@ export default function App() {
     }
   };
 
-  const handleNextTrack = () => {
+  const findFlowTracks = async (track: Track, count: number): Promise<Track[]> => {
+    // Gather all local candidate tracks
+    const allLocalTracks = [
+      ...trendingTracks,
+      ...likedTracks,
+      ...searchResults,
+      ...MOCK_TRACKS
+    ];
+    
+    // De-duplicate by id and exclude recently played tracks to avoid loop cycles
+    const uniqueTracksMap = new Map<string, Track>();
+    const playedHistory = playedHistoryRef.current || [];
+    for (const t of allLocalTracks) {
+      if (t && t.id && t.id !== track.id && !playedHistory.includes(t.id)) {
+        uniqueTracksMap.set(t.id, t);
+      }
+    }
+    const candidates = Array.from(uniqueTracksMap.values());
+    
+    // Parse target artists (lowercase array)
+    const targetArtists = track.artist ? track.artist.split(",").map(a => a.trim().toLowerCase()).filter(Boolean) : [];
+    
+    let matchedTracks: Track[] = [];
+
+    // 1. Try to find tracks by the same artist first
+    if (targetArtists.length > 0) {
+      const artistMatches = candidates.filter(t => {
+        if (!t.artist) return false;
+        const trackArtists = t.artist.split(",").map(a => a.trim().toLowerCase());
+        return targetArtists.some(ta => trackArtists.some(tArtist => tArtist.includes(ta) || ta.includes(tArtist)));
+      });
+      
+      // Shuffle matches for variety
+      matchedTracks = [...artistMatches].sort(() => Math.random() - 0.5);
+    }
+    
+    // 2. Fetch similar tracks from JioSaavn API using the primary artist's name
+    if (matchedTracks.length < count && track.audioUrl && (track.audioUrl.startsWith("http://") || track.audioUrl.startsWith("https://"))) {
+      const primaryArtist = targetArtists[0] || track.artist;
+      if (primaryArtist) {
+        try {
+          const response = await fetch(`https://jiosavnapi-production.up.railway.app/api/search/songs?query=${encodeURIComponent(primaryArtist)}&limit=15`);
+          const resData = await response.json();
+          if (resData.success && resData.data && resData.data.results) {
+            const mapped = resData.data.results.map((song: any) => {
+              const downloadObj = song.downloadUrl.find((d: any) => d.quality === "320kbps") || song.downloadUrl[song.downloadUrl.length - 1];
+              const imageObj = song.image.find((i: any) => i.quality === "500x500") || song.image[song.image.length - 1];
+              const durationSec = song.duration || 0;
+              const mins = Math.floor(durationSec / 60);
+              const secs = durationSec % 60;
+              const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+              
+              return {
+                id: song.id,
+                title: song.name,
+                artist: song.artists.primary.map((a: any) => a.name).join(", ") || "Unknown Artist",
+                album: song.album.name || "Unknown Album",
+                duration: durationStr,
+                coverUrl: imageObj ? imageObj.url : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17",
+                genre: song.language ? song.language.toUpperCase() : "UNKNOWN",
+                listeners: song.playCount ? `${(song.playCount / 1000000).toFixed(1)}M` : "100K",
+                audioUrl: downloadObj ? downloadObj.url : ""
+              };
+            }).filter((t: Track) => t.id !== track.id && t.audioUrl && !playedHistory.includes(t.id));
+            
+            // Append and de-duplicate API results
+            for (const t of mapped) {
+              if (!matchedTracks.some(mt => mt.id === t.id)) {
+                matchedTracks.push(t);
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.error("Failed to fetch next flow tracks from API", apiErr);
+        }
+      }
+    }
+
+    // 3. Try to find tracks by the same genre next if still not enough
+    if (matchedTracks.length < count && track.genre && track.genre !== "UNKNOWN") {
+      const genreMatches = candidates.filter(t => t.genre && t.genre.toUpperCase() === track.genre.toUpperCase() && !matchedTracks.some(mt => mt.id === t.id));
+      const shuffledGenreMatches = [...genreMatches].sort(() => Math.random() - 0.5);
+      matchedTracks = [...matchedTracks, ...shuffledGenreMatches];
+    }
+    
+    // 4. Fallback to trending tracks if still not enough
+    if (matchedTracks.length < count) {
+      const trendingMatches = trendingTracks.filter(t => t.id !== track.id && !matchedTracks.some(mt => mt.id === t.id));
+      matchedTracks = [...matchedTracks, ...trendingMatches];
+    }
+
+    return matchedTracks.slice(0, count);
+  };
+
+  const handleNextTrack = async () => {
+    if (isRepeat) {
+      seekAudio(0);
+      stopSynthTone();
+      playSynthTone(currentTrack.audioUrl, () => {
+        handleNextTrackRef.current();
+      });
+      setIsPlaying(true);
+      return;
+    }
+
     if (queue.length > 0) {
       const next = queue[0];
       setQueue((prev) => prev.slice(1));
@@ -435,8 +591,16 @@ export default function App() {
       if (activeRoomId) {
         updateJamRoomTrack(activeRoomId, next, true, 0);
       }
+    } else if (autoplayQueue.length > 0) {
+      const next = autoplayQueue[0];
+      setAutoplayQueue((prev) => prev.slice(1));
+      setCurrentTrack(next);
+      setIsPlaying(true);
+      if (activeRoomId) {
+        updateJamRoomTrack(activeRoomId, next, true, 0);
+      }
     } else {
-      // Loop or go to next index of all trending tracks
+      // Fallback: Loop or go to next index of all trending tracks
       const currentIndex = trendingTracks.findIndex((t) => t.id === currentTrack.id);
       let nextIndex = currentIndex + 1;
       if (nextIndex >= trendingTracks.length || nextIndex < 0) {
@@ -747,9 +911,6 @@ export default function App() {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <span className="text-[9px] text-gray-500 font-bold tracking-widest uppercase">
-                CONSOLE_OUTPUT_PORT_3000 // STABLE
-              </span>
             </div>
             
             <div className="flex items-center gap-4">
@@ -791,6 +952,11 @@ export default function App() {
                 onAddToQueue={handleAddToQueue}
                 onTriggerAddToPlaylist={(track) => setPlaylistModalTrack(track)}
                 onPlayPlaylist={handlePlayPlaylist}
+                isRepeat={isRepeat}
+                toggleRepeat={() => setIsRepeat(!isRepeat)}
+                isShuffle={isShuffle}
+                toggleShuffle={() => setIsShuffle(!isShuffle)}
+                autoplayQueue={autoplayQueue}
               />
             )}
             {currentScreen === Screen.DISCOVER && (
@@ -877,6 +1043,8 @@ export default function App() {
         toggleShuffle={() => setIsShuffle(!isShuffle)}
         isRepeat={isRepeat}
         toggleRepeat={() => setIsRepeat(!isRepeat)}
+        onRedirectToNowSpinning={() => setScreen(Screen.NOW_SPINNING)}
+        autoplayQueue={autoplayQueue}
       />
 
       {/* Global Album Details Modal */}

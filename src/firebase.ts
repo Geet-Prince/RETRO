@@ -1,10 +1,10 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, onSnapshot, deleteDoc, getDocs } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForDevelopment123456",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "music2d-auth.firebaseapp.com",
+  authDomain: typeof window !== "undefined" ? window.location.host : (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "music2d-auth.firebaseapp.com"),
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "music2d-auth",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "music2d-auth.appspot.com",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1234567890",
@@ -19,13 +19,45 @@ export const db = getFirestore(app);
 
 export { signInWithPopup, signOut };
 
+// Detect if running on mobile device or Capacitor
+export function isMobileOrCapacitor() {
+  const isCapacitor = typeof (window as any).Capacitor !== "undefined";
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return isCapacitor || isMobileUA;
+}
+
 // Helper to perform Google OAuth Login
 export async function signInWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result;
+    if (isMobileOrCapacitor()) {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    } else {
+      const result = await signInWithPopup(auth, googleProvider);
+      return result;
+    }
   } catch (error: any) {
     console.error("Firebase Login Error:", error);
+    throw error;
+  }
+}
+
+// Check and process redirect login results (needed for mobile/Capacitor redirect logins)
+export async function checkRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      const data = await syncUserProfile(
+        result.user.uid,
+        result.user.displayName || "Google Curator",
+        result.user.email || "",
+        result.user.photoURL || undefined
+      );
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Firebase Redirect Login Error:", error);
     throw error;
   }
 }

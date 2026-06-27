@@ -6,6 +6,14 @@ let analyser: AnalyserNode | null = null;
 // HTML5 audio elements for real audio streams
 let htmlAudio: HTMLAudioElement | null = null;
 let onAudioEndedCallback: (() => void) | null = null;
+let isAudioLoopEnabled = false;
+
+export function setAudioLoop(loop: boolean) {
+  isAudioLoopEnabled = loop;
+  if (htmlAudio) {
+    htmlAudio.loop = loop;
+  }
+}
 
 // Global playhead tracking for synth tones
 let synthPlayhead = 0;
@@ -109,6 +117,7 @@ export function playAudioStream(url: string, onEnded?: () => void) {
     
     htmlAudio = new Audio(url);
     htmlAudio.crossOrigin = "anonymous";
+    htmlAudio.loop = isAudioLoopEnabled;
     connectAudioSource(htmlAudio);
     
     if (onEnded) {

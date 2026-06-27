@@ -81,6 +81,8 @@ interface PersistentPlayerProps {
   toggleShuffle: () => void;
   isRepeat: boolean;
   toggleRepeat: () => void;
+  onRedirectToNowSpinning: () => void;
+  autoplayQueue?: Track[];
 }
 
 export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
@@ -94,8 +96,18 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
   isShuffle,
   toggleShuffle,
   isRepeat,
-  toggleRepeat
+  toggleRepeat,
+  onRedirectToNowSpinning,
+  autoplayQueue = []
 }) => {
+  const handlePlayerClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("input") || target.closest("canvas")) {
+      return;
+    }
+    onRedirectToNowSpinning();
+  };
+
   // Progress tracker state
   const [progressSecs, setProgressSecs] = useState<number>(0);
   const [volume, setVolume] = useState<number>(75);
@@ -336,7 +348,10 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
   ];
 
   return (
-    <div className="w-full bg-black text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden">
+    <div 
+      onClick={handlePlayerClick}
+      className="w-full bg-black text-[#fff9ef] border-t-2 border-border-tan h-20 px-4 md:px-6 flex items-center justify-between font-mono relative select-none z-40 overflow-hidden cursor-pointer"
+    >
       {/* Top absolute progress bar for mobile */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800 md:hidden z-20">
         <div 
@@ -550,38 +565,68 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
             </button>
           </div>
 
-          {queue.length === 0 ? (
-            <div className="text-center py-6 text-[10px] text-gray-400">
-              QUEUE_EMPTY
-              <span className="block mt-1">Add tracks from the catalog explorer</span>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto scrollbar-hide">
-              {queue.map((track, idx) => (
-                <div 
-                  key={`${track.id}-${idx}`}
-                  className="flex items-center gap-2 p-1.5 border border-border-tan hover:bg-surface-container rounded transition-colors"
-                >
-                  <img 
-                    src={track.coverUrl} 
-                    alt="Cover" 
-                    referrerPolicy="no-referrer"
-                    className="w-8 h-8 object-cover rounded-sm border border-border-tan"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h6 className="text-[10px] font-bold truncate leading-tight text-text-charcoal">{track.title}</h6>
-                    <span className="text-[8px] text-gray-500 block truncate">{track.artist}</span>
-                  </div>
-                  <button 
-                    onClick={() => removeFromQueue(idx)}
-                    className="text-[9px] font-bold text-red-600 hover:bg-red-50 px-1.5 py-0.5 rounded border border-red-200"
+          <div className="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1 scrollbar-hide">
+            {/* Manual Queue Section */}
+            {queue.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">MANUAL QUEUE ({queue.length})</div>
+                {queue.map((track, idx) => (
+                  <div 
+                    key={`${track.id}-${idx}`}
+                    className="flex items-center gap-2 p-1.5 border border-border-tan hover:bg-surface-container rounded transition-colors"
                   >
-                    DEL
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                    <img 
+                      src={track.coverUrl} 
+                      alt="Cover" 
+                      referrerPolicy="no-referrer"
+                      className="w-8 h-8 object-cover rounded-sm border border-border-tan flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h6 className="text-[10px] font-bold truncate leading-tight text-text-charcoal">{track.title}</h6>
+                      <span className="text-[8px] text-gray-500 block truncate">{track.artist}</span>
+                    </div>
+                    <button 
+                      onClick={() => removeFromQueue(idx)}
+                      className="text-[9px] font-bold text-red-600 hover:bg-red-50 px-1.5 py-0.5 rounded border border-red-200"
+                    >
+                      DEL
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {queue.length === 0 && autoplayQueue.length === 0 && (
+              <div className="text-center py-6 text-[10px] text-gray-400">
+                QUEUE_EMPTY
+                <span className="block mt-1">Add tracks from the catalog explorer</span>
+              </div>
+            )}
+
+            {/* Autoplay Queue Section */}
+            {autoplayQueue.length > 0 && (
+              <div className="flex flex-col gap-2 border-t border-dashed border-border-tan/50 pt-2 mt-1">
+                <div className="text-[8px] font-black text-primary/80 uppercase tracking-widest mb-1">UPCOMING AUTOPLAY ({autoplayQueue.length})</div>
+                {autoplayQueue.map((track, idx) => (
+                  <div 
+                    key={`autoplay-${track.id}-${idx}`}
+                    className="flex items-center gap-2 p-1.5 border border-border-tan bg-surface/50 hover:bg-surface rounded transition-colors opacity-90"
+                  >
+                    <img 
+                      src={track.coverUrl} 
+                      alt="Cover" 
+                      referrerPolicy="no-referrer"
+                      className="w-8 h-8 object-cover rounded-sm border border-border-tan flex-shrink-0 grayscale-[25%]"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h6 className="text-[10px] font-bold truncate leading-tight text-text-charcoal">{track.title}</h6>
+                      <span className="text-[8px] text-gray-400 block truncate">{track.artist}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

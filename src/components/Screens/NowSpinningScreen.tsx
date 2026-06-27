@@ -19,6 +19,11 @@ interface NowSpinningScreenProps {
   onAddToQueue: (track: Track) => void;
   onTriggerAddToPlaylist: (track: Track) => void;
   onPlayPlaylist: (playlist: any) => void;
+  isRepeat?: boolean;
+  toggleRepeat?: () => void;
+  isShuffle?: boolean;
+  toggleShuffle?: () => void;
+  autoplayQueue?: Track[];
 }
 
 type Tab = "queue" | "liked" | "playlist" | "search";
@@ -38,7 +43,12 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
   playlists,
   onAddToQueue,
   onTriggerAddToPlaylist,
-  onPlayPlaylist
+  onPlayPlaylist,
+  isRepeat = false,
+  toggleRepeat = () => {},
+  isShuffle = false,
+  toggleShuffle = () => {},
+  autoplayQueue = []
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>("queue");
   const [spinningSearchQuery, setSpinningSearchQuery] = useState("");
@@ -242,6 +252,10 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
             onPrev={onPrev}
             isLiked={likedTracks.some((t) => t.id === currentTrack.id)}
             onToggleLike={() => onToggleLike(currentTrack)}
+            isRepeat={isRepeat}
+            toggleRepeat={toggleRepeat}
+            isShuffle={isShuffle}
+            toggleShuffle={toggleShuffle}
           />
         </div>
 
@@ -275,7 +289,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                 
                 <div className="flex-1 overflow-y-auto max-h-[320px] pr-1 flex flex-col gap-2.5 scrollbar-hide">
                   {queue.length === 0 ? (
-                    <div className="text-center py-16 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
+                    <div className="text-center py-8 border-2 border-dashed border-border-tan rounded bg-surface text-gray-400 text-xs">
                       QUEUE_EMPTY
                       <span className="block mt-1 text-[10px]">Add songs from other tabs to start a session</span>
                     </div>
@@ -319,6 +333,49 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                         </div>
                       </div>
                     ))
+                  )}
+
+                  {/* Autoplay Flow section */}
+                  {autoplayQueue && autoplayQueue.length > 0 && (
+                    <div className="flex flex-col gap-2 mt-2 pt-2 border-t-2 border-dashed border-border-tan/40">
+                      <div className="flex justify-between items-center text-[9px] font-black text-primary/80 tracking-wider mb-1">
+                        <span>UPCOMING FLOW (SAME ARTIST/GENRE)</span>
+                        <span>{autoplayQueue.length} SONGS</span>
+                      </div>
+                      {autoplayQueue.map((track, idx) => (
+                        <div
+                          key={`autoplay-${track.id}-${idx}`}
+                          className="flex items-center justify-between p-2 rounded border border-border-tan bg-surface/50 hover:border-primary hover:bg-surface transition-all opacity-85 hover:opacity-100"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img 
+                              src={track.coverUrl} 
+                              alt="Cover" 
+                              className="w-9 h-9 object-cover rounded border border-border-tan flex-shrink-0 grayscale-[30%] hover:grayscale-0 transition-all"
+                            />
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-bold text-text-charcoal truncate">{track.title}</h4>
+                              <p className="text-[9px] text-gray-400 font-bold uppercase truncate">{track.artist}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => onPlayTrack(track)}
+                              className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer"
+                            >
+                              <Play className="w-3 h-3 text-primary" />
+                            </button>
+                            <button
+                              onClick={() => onAddToQueue(track)}
+                              className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black leading-none"
+                              title="Add to queue"
+                            >
+                              + QUEUE
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

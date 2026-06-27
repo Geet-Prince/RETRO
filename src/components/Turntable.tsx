@@ -11,6 +11,10 @@ interface TurntableProps {
   onPrev: () => void;
   isLiked: boolean;
   onToggleLike: () => void;
+  isRepeat?: boolean;
+  toggleRepeat?: () => void;
+  isShuffle?: boolean;
+  toggleShuffle?: () => void;
 }
 
 export const Turntable: React.FC<TurntableProps> = ({
@@ -20,12 +24,14 @@ export const Turntable: React.FC<TurntableProps> = ({
   onNext,
   onPrev,
   isLiked,
-  onToggleLike
+  onToggleLike,
+  isRepeat = false,
+  toggleRepeat = () => {},
+  isShuffle = false,
+  toggleShuffle = () => {}
 }) => {
   // Sync local progress tracker with active playback
   const [progressSecs, setProgressSecs] = useState<number>(0);
-  const [isShuffleLocal, setIsShuffleLocal] = useState<boolean>(false);
-  const [isRepeatLocal, setIsRepeatLocal] = useState<boolean>(false);
 
   // Parse track duration "MM:SS" -> total seconds
   const durationParts = (currentTrack?.duration || "00:00").split(":");
@@ -187,8 +193,8 @@ export const Turntable: React.FC<TurntableProps> = ({
       {/* Spotify-style Playback controls */}
       <div className="w-full flex items-center justify-center gap-6">
         <button 
-          onClick={() => setIsShuffleLocal(!isShuffleLocal)}
-          className={`p-1.5 transition-colors ${isShuffleLocal ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
+          onClick={toggleShuffle}
+          className={`p-1.5 transition-colors ${isShuffle ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
           title="Shuffle"
         >
           <Shuffle className="w-4 h-4" />
@@ -224,8 +230,8 @@ export const Turntable: React.FC<TurntableProps> = ({
         </button>
 
         <button 
-          onClick={() => setIsRepeatLocal(!isRepeatLocal)}
-          className={`p-1.5 transition-colors ${isRepeatLocal ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
+          onClick={toggleRepeat}
+          className={`p-1.5 transition-colors ${isRepeat ? "text-primary" : "text-gray-400 hover:text-text-charcoal"}`}
           title="Repeat"
         >
           <Repeat className="w-4 h-4" />

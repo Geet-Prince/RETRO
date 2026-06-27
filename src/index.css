@@ -55,21 +55,122 @@
   --color-text-charcoal: #1A1A1A;
 }
 
+/* Dark theme variables */
+.dark {
+  --color-background: #121212;
+  --color-surface: #1a1a1a;
+  --color-surface-dim: #151515;
+  --color-surface-bright: #242424;
+  --color-surface-container-lowest: #0c0c0c;
+  --color-surface-container-low: #181818;
+  --color-surface-container: #222222;
+  --color-surface-container-high: #2c2c2c;
+  --color-surface-container-highest: #373737;
+  --color-on-surface: #fff9ef;
+  --color-on-surface-variant: #ccc4b5;
+  --color-inverse-surface: #f9f0db;
+  --color-inverse-on-surface: #1f1b0f;
+  --color-outline: #8c7165;
+  --color-outline-variant: #4a3e39;
+  --color-surface-tint: #ffb693;
+  --color-primary: #ff6b00;
+  --color-on-primary: #121212;
+  --color-primary-container: #ff8533;
+  --color-on-primary-container: #121212;
+  --color-inverse-primary: #9c3f00;
+  --color-secondary: #ccc6b4;
+  --color-on-secondary: #1a1a1a;
+  --color-secondary-container: #4a4739;
+  --color-on-secondary-container: #e9e2d0;
+  --color-tertiary: #a2c9ff;
+  --color-on-tertiary: #001c38;
+  --color-tertiary-container: #004881;
+  --color-on-tertiary-container: #d3e4ff;
+  --color-border-tan: #444444;
+  --color-text-charcoal: #fff9ef;
+}
+
+/* Dark Mode overrides for hardcoded tailwind classes */
+.dark .bg-\[\#FAF3E0\] {
+  background-color: var(--color-surface-container-low) !important;
+}
+.dark .bg-\[\#FCF3DE\] {
+  background-color: var(--color-surface-container) !important;
+}
+.dark .bg-\[\#fff9ef\] {
+  background-color: var(--color-background) !important;
+}
+.dark .text-\[\#1A1A1A\] {
+  color: var(--color-text-charcoal) !important;
+}
+.dark .border-\[\#1A1A1A\] {
+  border-color: var(--color-border-tan) !important;
+}
+.dark .bg-\[\#1A1A1A\] {
+  background-color: var(--color-surface-container-high) !important;
+}
+.dark .text-\[\#fff9ef\] {
+  color: var(--color-text-charcoal) !important;
+}
+.dark .border-\[\#C8B89A\] {
+  border-color: var(--color-border-tan) !important;
+}
+.dark .text-\[\#C8B89A\] {
+  color: var(--color-border-tan) !important;
+}
+.dark .bg-white {
+  background-color: var(--color-surface-container-low) !important;
+}
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--color-surface-container-high) !important;
+}
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--color-surface-container-high) !important;
+}
+.dark .hover\:bg-\[\#1A1A1A\]:hover {
+  background-color: var(--color-surface-container-high) !important;
+  color: var(--color-text-charcoal) !important;
+}
+.dark .hover\:bg-surface-container:hover {
+  background-color: var(--color-surface-container-highest) !important;
+}
+.dark .hover\:text-white:hover {
+  color: var(--color-background) !important;
+}
+.dark .bg-gray-200 {
+  background-color: var(--color-surface-container-high) !important;
+}
+.dark .hover\:bg-gray-300:hover {
+  background-color: var(--color-surface-container-highest) !important;
+}
+.dark .bg-red-50 {
+  background-color: rgba(186, 26, 26, 0.2) !important;
+}
+.dark .border-red-200 {
+  border-color: rgba(186, 26, 26, 0.4) !important;
+}
+.dark .bg-\[\#FFEAEA\] {
+  background-color: rgba(186, 26, 26, 0.2) !important;
+}
+.dark .border-red-300 {
+  border-color: rgba(186, 26, 26, 0.5) !important;
+}
+
 /* Custom Brutalist Styling Helpers */
 .brutalist-border {
-  border: 1px solid #C8B89A;
+  border: 1px solid var(--color-border-tan);
 }
 
 .brutalist-border-thick {
-  border: 2px solid #1A1A1A;
+  border: 2px solid var(--color-text-charcoal);
 }
 
 .brutalist-shadow {
-  box-shadow: 4px 4px 0px #C8B89A;
+  box-shadow: 4px 4px 0px var(--color-border-tan);
 }
 
 .brutalist-shadow-thick {
-  box-shadow: 8px 8px 0px #C8B89A;
+  box-shadow: 8px 8px 0px var(--color-border-tan);
 }
 
 .scrollbar-hide::-webkit-scrollbar {

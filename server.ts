@@ -1,5 +1,6 @@
 import express from "express";
 import http from "http";
+import https from "https";
 import { Server } from "socket.io";
 import cors from "cors";
 import fs from "fs";
@@ -26,6 +27,40 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// Firebase Auth Custom Domain Reverse Proxy
+// Proxies all /__/auth/* requests to Firebase to keep cookies and session storage first-party
+app.all("/__/auth/*", (req, res) => {
+  const projectId = process.env.VITE_FIREBASE_PROJECT_ID || "retro-341c2";
+  const targetHost = `${projectId}.firebaseapp.com`;
+  const options = {
+    hostname: targetHost,
+    port: 443,
+    path: req.originalUrl,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: targetHost
+    }
+  };
+
+  const proxyReq = https.request(options, (proxyRes) => {
+    res.status(proxyRes.statusCode || 500);
+    Object.keys(proxyRes.headers).forEach((key) => {
+      if (proxyRes.headers[key]) {
+        res.setHeader(key, proxyRes.headers[key]!);
+      }
+    });
+    proxyRes.pipe(res, { end: true });
+  });
+
+  proxyReq.on("error", (err) => {
+    console.error("Firebase Auth Proxy Error:", err);
+    res.status(500).send("Authentication proxy error");
+  });
+
+  req.pipe(proxyReq, { end: true });
+});
 
 const PORT = process.env.PORT || 3001;
 

@@ -26,7 +26,7 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({ isPlayin
   }, [isPlaying]);
 
   return (
-    <div className="w-full bg-[#1A1A1A] border border-border-tan rounded-lg p-4 font-mono select-none relative overflow-hidden brutalist-shadow">
+    <div className="w-full bg-black border border-border-tan rounded-lg p-4 font-mono select-none relative overflow-hidden brutalist-shadow">
       {/* Grid lines in the background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(200,184,154,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(200,184,154,0.05)_1px,transparent_1px)] bg-[size:10px_10px]" />
 

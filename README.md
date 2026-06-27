@@ -11,6 +11,19 @@ Music2D is a premium, retro-brutalist styled music player built with React, Vite
 5. **Real-time Jam Together Stations**: Launch your own streaming station or tune in to others to sync playback, seek position, play/pause actions, and chat live via WebSockets.
 
 ---
+## 📱 Install the App
+
+| Step | Action |
+|------|--------|
+| 1️⃣ | Open the website in Chrome |
+| 2️⃣ | Tap the **⋮** menu |
+| 3️⃣ | Select **Add to Home screen** |
+| 4️⃣ | Tap **Install** |
+| 5️⃣ | Open Retro Music from your home screen |
+
+<p align="center">
+  <img src="setting.png" width="320" alt="Install Retro Music PWA">
+</p>
 
 ## Setup & Running Locally
 

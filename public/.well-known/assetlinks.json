@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "me.geetprince.retro",
+      "sha256_cert_fingerprints": [
+        "6E:25:3A:A5:A8:7E:4A:E8:04:49:A0:33:39:2A:8A:B0:B1:F1:03:5D:8B:97:A0:29:93:00:DC:30:DF:99:6D:71"
+      ]
+    }
+  }
+]
