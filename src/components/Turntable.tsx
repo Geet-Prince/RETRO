@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Track } from "../types";
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Heart, Music, Sparkles } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Heart, Music, Sparkles, ListPlus } from "lucide-react";
 import { seekAudio, getAudioCurrentTime } from "../utils/audio";
 
 interface TurntableProps {
@@ -15,6 +15,7 @@ interface TurntableProps {
   toggleRepeat?: () => void;
   isShuffle?: boolean;
   toggleShuffle?: () => void;
+  onTriggerAddToPlaylist?: () => void;
 }
 
 export const Turntable: React.FC<TurntableProps> = ({
@@ -28,7 +29,8 @@ export const Turntable: React.FC<TurntableProps> = ({
   isRepeat = false,
   toggleRepeat = () => {},
   isShuffle = false,
-  toggleShuffle = () => {}
+  toggleShuffle = () => {},
+  onTriggerAddToPlaylist
 }) => {
   // Sync local progress tracker with active playback
   const [progressSecs, setProgressSecs] = useState<number>(0);
@@ -161,17 +163,30 @@ export const Turntable: React.FC<TurntableProps> = ({
             {currentTrack.artist}
           </p>
         </div>
-        <button 
-          onClick={onToggleLike}
-          aria-label={isLiked ? "Unlike Track" : "Like Track"}
-          className={`p-2 rounded-full border transition-all ${
-            isLiked 
-              ? "bg-red-50 border-red-200 text-red-500" 
-              : "bg-white border-border-tan text-gray-400 hover:text-red-500 hover:bg-red-50"
-          }`}
-        >
-          <Heart className={`w-4 h-4 ${isLiked ? "fill-red-500" : ""}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          {onTriggerAddToPlaylist && (
+            <button 
+              onClick={onTriggerAddToPlaylist}
+              aria-label="Add to Playlist"
+              className="p-2 rounded-full border border-border-tan text-text-charcoal bg-white hover:bg-[#FAF3E0] hover:text-primary transition-all shadow-sm"
+              title="Add to Playlist"
+            >
+              <ListPlus className="w-4 h-4" />
+            </button>
+          )}
+          <button 
+            onClick={onToggleLike}
+            aria-label={isLiked ? "Unlike Track" : "Like Track"}
+            className={`p-2 rounded-full border transition-all shadow-sm ${
+              isLiked 
+                ? "bg-red-50 border-red-200 text-red-500" 
+                : "bg-white border-border-tan text-gray-400 hover:text-red-500 hover:bg-red-50"
+            }`}
+            title={isLiked ? "Unlike Track" : "Like Track"}
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? "fill-red-500" : ""}`} />
+          </button>
+        </div>
       </div>
 
       {/* Spotify-style Timeline Progress bar */}

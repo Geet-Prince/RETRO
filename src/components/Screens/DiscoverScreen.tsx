@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Track } from "../../types";
 import { POPULAR_ARTISTS } from "../../data";
-import { Search, Compass, Play, Plus, Sparkles, TrendingUp } from "lucide-react";
+import { Search, Compass, Play, Plus, Sparkles, TrendingUp, ListPlus } from "lucide-react";
 
 interface DiscoverScreenProps {
   allTracks: Track[];
@@ -11,6 +11,7 @@ interface DiscoverScreenProps {
   onSelectGenre: (genre: string) => void;
   onSearch: (query: string) => void;
   onOpenAlbum: (albumId: string) => void;
+  onTriggerAddToPlaylist: (track: Track) => void;
 }
 
 export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
@@ -20,7 +21,8 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
   onAddToQueue,
   onSelectGenre,
   onSearch,
-  onOpenAlbum
+  onOpenAlbum,
+  onTriggerAddToPlaylist
 }) => {
   const [searchVal, setSearchVal] = useState<string>("");
   const [suggestions, setSuggestions] = useState<Track[]>([]);
@@ -313,6 +315,28 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({
                   <p className="text-[8px] text-gray-500 truncate uppercase mt-0.5 tracking-tighter">
                     {track.artist}
                   </p>
+
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-[7px] text-primary font-bold border border-primary/20 px-1 py-0.2 rounded inline-block">
+                      {track.genre}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onTriggerAddToPlaylist(track); }}
+                        className="p-1 rounded bg-[#FAF3E0] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                        title="Add to Playlist"
+                      >
+                        <ListPlus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onAddToQueue(track); }}
+                        className="p-1 rounded bg-[#FAF3E0] border border-border-tan hover:bg-text-charcoal hover:text-white transition-colors cursor-pointer"
+                        title="Add to Queue"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

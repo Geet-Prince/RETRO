@@ -1,6 +1,6 @@
 import React from "react";
 import { Track } from "../../types";
-import { Search, Play, Plus, ArrowLeft } from "lucide-react";
+import { Search, Play, Plus, ArrowLeft, ListPlus } from "lucide-react";
 
 interface SearchScreenProps {
   query: string;
@@ -161,9 +161,28 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
               <p className="text-[8px] text-gray-500 truncate uppercase mt-0.5 tracking-tighter leading-none">
                 {track.artist}
               </p>
-              <span className="text-[7px] text-primary font-bold border border-primary/20 px-1 py-0.2 rounded inline-block mt-2">
-                {track.genre}
-              </span>
+              
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-[7px] text-primary font-bold border border-primary/20 px-1 py-0.2 rounded inline-block">
+                  {track.genre}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onTriggerAddToPlaylist(track); }}
+                    className="p-1 rounded bg-[#FAF3E0] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                    title="Add to Playlist"
+                  >
+                    <ListPlus className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAddToQueue(track); }}
+                    className="p-1 rounded bg-[#FAF3E0] border border-border-tan hover:bg-text-charcoal hover:text-white transition-colors cursor-pointer"
+                    title="Add to Queue"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>

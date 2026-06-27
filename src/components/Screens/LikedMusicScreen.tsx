@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Track } from "../../types";
-import { Heart, Play, Shuffle, ArrowUpDown, RefreshCw, Signal, Plus } from "lucide-react";
+import { Heart, Play, Shuffle, ArrowUpDown, RefreshCw, Signal, Plus, ListPlus } from "lucide-react";
 
 interface LikedMusicScreenProps {
   likedTrackIds: string[];
@@ -140,10 +140,10 @@ export const LikedMusicScreen: React.FC<LikedMusicScreenProps> = ({
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); onTriggerAddToPlaylist(track); }}
-                      className="p-1 rounded bg-surface border border-border-tan text-text-charcoal hover:bg-primary hover:text-white transition-colors"
+                      className="p-1.5 rounded bg-surface border border-border-tan text-text-charcoal hover:bg-primary hover:text-white transition-colors"
                       title="Add to Playlist"
                     >
-                      <Plus className="w-3 h-3" />
+                      <ListPlus className="w-3.5 h-3.5" />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); onToggleLike(track); }}

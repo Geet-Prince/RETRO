@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Track } from "../../types";
 import { Turntable } from "../Turntable";
-import { Sparkles, ListMusic, Heart, Music, Search, Plus, Play, Trash2 } from "lucide-react";
+import { Sparkles, ListMusic, Heart, Music, Search, Plus, Play, Trash2, ListPlus } from "lucide-react";
 
 interface NowSpinningScreenProps {
   currentTrack: Track;
@@ -256,6 +256,7 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
             toggleRepeat={toggleRepeat}
             isShuffle={isShuffle}
             toggleShuffle={toggleShuffle}
+            onTriggerAddToPlaylist={() => onTriggerAddToPlaylist(currentTrack)}
           />
         </div>
 
@@ -319,10 +320,10 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                           </button>
                           <button
                             onClick={() => onTriggerAddToPlaylist(track)}
-                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer"
                             title="Add to playlist"
                           >
-                            + PL
+                            <ListPlus className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => removeFromQueue(idx)}
@@ -428,10 +429,10 @@ export const NowSpinningScreen: React.FC<NowSpinningScreenProps> = ({
                           </button>
                           <button
                             onClick={() => onTriggerAddToPlaylist(track)}
-                            className="p-1 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer text-[9px] font-black px-1.5 py-0.5"
+                            className="p-1.5 rounded bg-[#fff9ef] border border-border-tan hover:bg-primary hover:text-white transition-colors cursor-pointer"
                             title="Add to playlist"
                           >
-                            + PL
+                            <ListPlus className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
