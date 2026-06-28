@@ -55,14 +55,10 @@ export default function App() {
     }
     return MOCK_TRACKS[0];
   });
-  const [isPlaying, setIsPlaying] = useState<boolean>(() => {
-    return localStorage.getItem("retro_is_playing") === "true";
-  });
-  const isInitialMount = React.useRef(true);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const isInitialPlay = React.useRef(true);
 
-  useEffect(() => {
-    localStorage.setItem("retro_is_playing", String(isPlaying));
-  }, [isPlaying]);
+  // We no longer persist isPlaying to localStorage, because browsers block autoplay on refresh anyway.
   const [likedTrackIds, setLikedTrackIds] = useState<string[]>([]);
   const [likedTracks, setLikedTracks] = useState<Track[]>([]);
   const [queue, setQueue] = useState<Track[]>([]);
@@ -598,6 +594,11 @@ export default function App() {
     const playPromise = playSynthTone(track.audioUrl, () => {
       handleNextTrackRef.current();
     });
+    
+    // If they explicitly clicked a track, they don't want to resume from an old time!
+    isInitialPlay.current = false;
+    localStorage.setItem("retro_last_time", "0");
+    
     if (playPromise) {
       playPromise.catch(() => {
         console.warn("Autoplay blocked. User gesture might have expired.");
@@ -639,6 +640,16 @@ export default function App() {
       const playPromise = playSynthTone(currentTrackRef.current.audioUrl, () => {
         handleNextTrackRef.current();
       });
+      
+      // Auto-resume from previous session if it's the very first play action
+      if (isInitialPlay.current) {
+        const savedTime = localStorage.getItem("retro_last_time");
+        if (savedTime) {
+          setTimeout(() => seekAudio(Number(savedTime)), 50);
+        }
+        isInitialPlay.current = false;
+      }
+      
       if (playPromise) {
         playPromise.catch(() => {
           setIsPlaying(false);
