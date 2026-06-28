@@ -31,6 +31,7 @@ export function initAudio() {
   // Pre-warm the HTML5 Audio element synchronously during user gesture to bypass iOS/Mobile autoplay blocks
   if (!htmlAudio) {
     htmlAudio = new Audio();
+    htmlAudio.volume = currentAudioVolume;
     // 1 second of absolute silence in base64 to unlock audio
     htmlAudio.src = "data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
     htmlAudio.play().catch(() => {});
@@ -126,6 +127,7 @@ export function playAudioStream(url: string, onEnded?: () => void): Promise<void
     // Re-use the existing pre-warmed htmlAudio to preserve the mobile user gesture!
     if (!htmlAudio) {
       htmlAudio = new Audio();
+      htmlAudio.volume = currentAudioVolume;
     } else {
       htmlAudio.pause();
     }
@@ -163,8 +165,11 @@ export function playAudioStream(url: string, onEnded?: () => void): Promise<void
   }
 }
 
+let currentAudioVolume = 1.0;
+
 export function setAudioVolume(volume: number) {
   // volume is 0 to 1
+  currentAudioVolume = volume;
   if (htmlAudio) {
     htmlAudio.volume = volume;
   }

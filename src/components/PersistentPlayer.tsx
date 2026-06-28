@@ -115,14 +115,17 @@ export const PersistentPlayer: React.FC<PersistentPlayerProps> = ({
     const saved = localStorage.getItem("retro_volume");
     return saved ? Number(saved) : 75;
   });
-  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(() => {
+    return localStorage.getItem("retro_is_muted") === "true";
+  });
   const [showQueue, setShowQueue] = useState<boolean>(false);
   const [showLyrics, setShowLyrics] = useState<boolean>(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem("retro_volume", String(volume));
-  }, [volume]);
+    localStorage.setItem("retro_is_muted", String(isMuted));
+  }, [volume, isMuted]);
 
   // Parse duration ("04:12" -> 252 secs)
   const durationParts = (currentTrack?.duration || "00:00").split(":");
