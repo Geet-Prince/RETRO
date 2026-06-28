@@ -37,6 +37,9 @@ export function initAudio() {
   }
 }
 
+let isHtmlAudioConnected = false;
+let mediaElementSource: MediaElementAudioSourceNode | null = null;
+
 function connectAudioSource(audioElement: HTMLAudioElement) {
   try {
     initAudio();
@@ -45,9 +48,14 @@ function connectAudioSource(audioElement: HTMLAudioElement) {
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
     }
-    const source = audioCtx.createMediaElementSource(audioElement);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
+    
+    // Only connect once to prevent InvalidStateError
+    if (!isHtmlAudioConnected) {
+      mediaElementSource = audioCtx.createMediaElementSource(audioElement);
+      mediaElementSource.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      isHtmlAudioConnected = true;
+    }
   } catch (e) {
     console.warn("Failed to connect HTML Audio to Web Audio API (CORS/Node limit):", e);
   }

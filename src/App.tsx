@@ -319,32 +319,8 @@ export default function App() {
     }
   }, [isPlaying, currentTrack]);
 
-  useEffect(() => {
-    if (isPlaying) {
-      const playPromise = playSynthTone(currentTrack.audioUrl, () => {
-        handleNextTrackRef.current();
-      });
-      
-      if (playPromise) {
-        playPromise.catch(() => {
-          console.warn("Autoplay blocked on mount or track change. Pausing.");
-          setIsPlaying(false);
-          isInitialMount.current = false;
-        });
-      }
-      if (isInitialMount.current) {
-        const savedTime = localStorage.getItem("retro_last_time");
-        if (savedTime) {
-          setTimeout(() => seekAudio(Number(savedTime)), 50);
-        }
-        isInitialMount.current = false;
-      } else {
-        localStorage.setItem("retro_last_time", "0");
-      }
-    } else {
-      stopSynthTone();
-    }
-  }, [isPlaying, currentTrack]);
+  // Removed problematic async playback useEffect. 
+  // Playback is now explicitly driven synchronously by user interaction handlers to fix iOS Safari Autoplay blocks.
 
   useEffect(() => {
     if (isPlaying) {
@@ -420,6 +396,20 @@ export default function App() {
           // Update local state without writing back to Firestore (skip sync)
           setCurrentTrack(dbTrack);
           setIsPlaying(updatedRoom.isPlaying);
+          
+          if (updatedRoom.isPlaying) {
+            const playPromise = playSynthTone(dbTrack.audioUrl, () => {
+              handleNextTrackRef.current();
+            });
+            if (playPromise) {
+              playPromise.catch(() => {
+                setIsPlaying(false);
+              });
+            }
+          } else {
+            stopSynthTone();
+          }
+          
           if (isDiffTrack || isTimeDrifted) {
             setTimeout(() => {
               seekAudio(dbEstimatedProgress);
@@ -604,6 +594,17 @@ export default function App() {
     setCurrentTrack(track);
     setIsPlaying(true);
     
+    // Explicit synchronous play to bypass Safari Autoplay rules
+    const playPromise = playSynthTone(track.audioUrl, () => {
+      handleNextTrackRef.current();
+    });
+    if (playPromise) {
+      playPromise.catch(() => {
+        console.warn("Autoplay blocked. User gesture might have expired.");
+        setIsPlaying(false);
+      });
+    }
+    
     if (activeRoomId && !skipFirebaseSync) {
       updateJamRoomTrack(activeRoomId, track, true, 0);
     }
@@ -633,8 +634,22 @@ export default function App() {
     initAudio();
     const nextPlaying = !isPlaying;
     setIsPlaying(nextPlaying);
+    
+    if (nextPlaying && currentTrackRef.current) {
+      const playPromise = playSynthTone(currentTrackRef.current.audioUrl, () => {
+        handleNextTrackRef.current();
+      });
+      if (playPromise) {
+        playPromise.catch(() => {
+          setIsPlaying(false);
+        });
+      }
+    } else {
+      stopSynthTone();
+    }
+    
     if (activeRoomId) {
-      updateJamRoomTrack(activeRoomId, currentTrack, nextPlaying, Math.floor(getAudioCurrentTime()));
+      updateJamRoomTrack(activeRoomId, currentTrackRef.current || currentTrack, nextPlaying, Math.floor(getAudioCurrentTime()));
     }
   };
 
@@ -734,12 +749,15 @@ export default function App() {
 
   const handleNextTrack = async () => {
     initAudio();
-    if (isRepeat) {
+    if (isRepeat && currentTrackRef.current) {
       seekAudio(0);
       stopSynthTone();
-      playSynthTone(currentTrack.audioUrl, () => {
+      const playPromise = playSynthTone(currentTrackRef.current.audioUrl, () => {
         handleNextTrackRef.current();
       });
+      if (playPromise) {
+        playPromise.catch(() => setIsPlaying(false));
+      }
       setIsPlaying(true);
       return;
     }
@@ -747,23 +765,14 @@ export default function App() {
     if (queue.length > 0) {
       const next = queue[0];
       setQueue((prev) => prev.slice(1));
-      setCurrentTrack(next);
-      setIsPlaying(true);
-      if (activeRoomId) {
-        updateJamRoomTrack(activeRoomId, next, true, 0);
-      }
+      handlePlayTrack(next);
     } else if (autoplayQueue.length > 0) {
       const next = autoplayQueue[0];
       setAutoplayQueue((prev) => prev.slice(1));
-      setCurrentTrack(next);
-      setIsPlaying(true);
-      if (activeRoomId) {
-        updateJamRoomTrack(activeRoomId, next, true, 0);
-      }
-    } else {
-      // Fallback: Loop or go to next index of all trending tracks
-      const currentIndex = trendingTracks.findIndex((t) => t.id === currentTrack.id);
-      let nextIndex = currentIndex + 1;
+      handlePlayTrack(next);
+    } else if (trendingTracks.length > 0) {
+      // Fallback fallback
+      let nextIndex = trendingTracks.findIndex((t) => t.id === currentTrackRef.current?.id) + 1;
       if (nextIndex >= trendingTracks.length || nextIndex < 0) {
         nextIndex = 0;
       }
