@@ -27,6 +27,14 @@ export function initAudio() {
   if (audioCtx.state === "suspended") {
     audioCtx.resume();
   }
+  
+  // Pre-warm the HTML5 Audio element synchronously during user gesture to bypass iOS/Mobile autoplay blocks
+  if (!htmlAudio) {
+    htmlAudio = new Audio();
+    // 1 second of absolute silence in base64 to unlock audio
+    htmlAudio.src = "data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+    htmlAudio.play().catch(() => {});
+  }
 }
 
 function connectAudioSource(audioElement: HTMLAudioElement) {
@@ -107,23 +115,38 @@ export function playAudioStream(url: string, onEnded?: () => void): Promise<void
       return htmlAudio.play();
     }
     
-    if (htmlAudio) {
+    // Re-use the existing pre-warmed htmlAudio to preserve the mobile user gesture!
+    if (!htmlAudio) {
+      htmlAudio = new Audio();
+    } else {
       htmlAudio.pause();
-      htmlAudio.src = "";
     }
     
-    htmlAudio = new Audio(url);
-    htmlAudio.crossOrigin = "anonymous";
+    // Only use CORS on desktop. Mobile CDNs often fail CORS, causing the audio to break entirely.
+    // Without CORS, the visualizer will be flat, but the audio will PLAY perfectly.
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) {
+      htmlAudio.crossOrigin = "anonymous";
+    } else {
+      htmlAudio.removeAttribute("crossOrigin");
+    }
+    
+    htmlAudio.src = url;
     htmlAudio.loop = isAudioLoopEnabled;
-    connectAudioSource(htmlAudio);
+    
+    // Only connect if we are using crossOrigin, otherwise it will taint the context and throw errors on Safari
+    if (!isMobile) {
+      connectAudioSource(htmlAudio);
+    }
     
     if (onEnded) {
       onAudioEndedCallback = onEnded;
       htmlAudio.addEventListener("ended", onAudioEndedCallback);
-      htmlAudio.addEventListener("error", (e) => {
-        console.error("Audio stream error (CORS/expired URL?):", e);
-      });
     }
+    
+    htmlAudio.addEventListener("error", (e) => {
+      console.warn("Audio stream non-fatal error (Possible CORS on CDN):", e);
+    });
     
     return htmlAudio.play();
   } catch (e) {
